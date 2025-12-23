@@ -1,0 +1,31 @@
+domain = "mysite.com"
+description = "Custom instructions for mysite.com"
+notes = ["Add custom notes about this site here"]
+
+[login]
+url = "/login"
+username_selector = "#username, #email, [name='email']"
+password_selector = "#password, [type='password']"
+submit_selector = "[type='submit'], button.login"
+success_indicator = ".dashboard, .welcome"
+failure_indicator = ".error, .alert-danger"
+extra_steps = []
+
+[selectors]
+search = "#search, [name='q']"
+submit = "[type='submit']"
+
+[before_actions]
+
+[after_actions]
+
+[wait_ready]
+selector = "body"
+network_idle = false
+timeout_ms = 5000
+
+[cookie_consent]
+accept_selector = "[id*='accept'], [class*='accept'], .cookie-accept"
+reject_selector = "[id*='reject'], [class*='reject'], .cookie-reject"
+close_selector = ".cookie-close, .cookie-dismiss"
+action = "accept"

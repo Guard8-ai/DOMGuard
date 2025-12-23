@@ -1,0 +1,17 @@
+id = "workflow-1883ebd308df"
+name = "Login Test"
+parameters = []
+tags = []
+created_at = "2025-12-23T18:32:50.478877735Z"
+modified_at = "2025-12-23T18:32:50.478877735Z"
+run_count = 0
+
+[[steps]]
+name = "Navigate to site"
+action = "navigate"
+target = "{{url}}"
+timeout_ms = 10000
+required = true
+retry_count = 0
+delay_after_ms = 1000
+screenshot_after = false

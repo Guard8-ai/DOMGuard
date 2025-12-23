@@ -1,0 +1,41 @@
+[project]
+name = "My Project"
+version = "1.0.0"
+areas = [
+    "api",
+    "auth",
+    "backend",
+    "deployment",
+    "docs",
+    "frontend",
+    "setup",
+    "testing",
+]
+
+[settings]
+statuses = [
+    "todo",
+    "doing",
+    "review",
+    "done",
+    "blocked",
+]
+priorities = [
+    "low",
+    "medium",
+    "high",
+    "critical",
+]
+complexity_scale = "1-10"
+default_estimate_unit = "hours"
+
+[git]
+auto_add_tasks = true
+auto_commit_on_status_change = false
+commit_message_template = "Task {{id}}: {{action}} - {{title}}"
+
+[ai]
+enabled = true
+claude_code_integration = true
+auto_suggestions = true
+complexity_analysis = true

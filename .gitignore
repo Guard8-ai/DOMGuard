@@ -1,0 +1,22 @@
+# Build
+/target/
+
+# DOMGuard
+.domguard/screenshots/
+.domguard/sessions/
+.domguard/state/
+
+# TaskGuard
+.taskguard/state/
+
+# IDE
+.idea/
+.vscode/
+*.swp
+
+# OS
+.DS_Store
+
+# Claude
+CLAUDE.md
+.claude/

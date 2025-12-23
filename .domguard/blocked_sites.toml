@@ -1,0 +1,6 @@
+blocked = [
+    "malicious-site.com",
+    "phishing.example.org",
+]
+default_block = false
+allowed = []
