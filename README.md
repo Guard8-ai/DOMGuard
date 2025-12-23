@@ -1,12 +1,20 @@
 # DOMGuard
 
-[![CI](https://github.com/Guard8-ai/DOMGuard/actions/workflows/ci.yml/badge.svg)](https://github.com/Guard8-ai/DOMGuard/actions/workflows/ci.yml)
-[![Release](https://img.shields.io/github/release/Guard8-ai/DOMGuard.svg)](https://github.com/Guard8-ai/DOMGuard/releases/latest)
-[![Documentation](https://readthedocs.org/projects/domguard/badge/?version=latest)](https://domguard.readthedocs.io/en/latest/)
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![Rust](https://img.shields.io/badge/rust-1.70%2B-orange.svg)](https://www.rust-lang.org/)
+<p align="center">
+  <img src="docs/assets/logo.png" alt="DOMGuard Logo" width="200">
+</p>
 
-**Local-First Chrome DevTools CLI for AI Agents**
+<p align="center">
+  <a href="https://github.com/Guard8-ai/DOMGuard/actions/workflows/ci.yml"><img src="https://github.com/Guard8-ai/DOMGuard/actions/workflows/ci.yml/badge.svg" alt="CI"></a>
+  <a href="https://github.com/Guard8-ai/DOMGuard/releases/latest"><img src="https://img.shields.io/github/release/Guard8-ai/DOMGuard.svg" alt="Release"></a>
+  <a href="https://domguard.readthedocs.io/en/latest/"><img src="https://readthedocs.org/projects/domguard/badge/?version=latest" alt="Documentation"></a>
+  <a href="https://opensource.org/licenses/MIT"><img src="https://img.shields.io/badge/License-MIT-yellow.svg" alt="License: MIT"></a>
+  <a href="https://www.rust-lang.org/"><img src="https://img.shields.io/badge/rust-1.70%2B-orange.svg" alt="Rust"></a>
+</p>
+
+<p align="center">
+  <strong>Local-First Chrome DevTools CLI for AI Agents</strong>
+</p>
 
 Direct CDP access for AI agents. No middleware, no servers, sub-ms local response.
 
