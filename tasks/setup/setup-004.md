@@ -1,7 +1,7 @@
 ---
 id: setup-004
 title: Update domguard init to copy AGENTIC guide and config templates
-status: todo
+status: done
 priority: high
 tags:
 - setup

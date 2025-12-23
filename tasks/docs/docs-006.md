@@ -1,7 +1,7 @@
 ---
 id: docs-006
 title: Add LICENSE file (MIT)
-status: todo
+status: done
 priority: medium
 tags:
 - docs

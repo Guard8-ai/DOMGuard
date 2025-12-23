@@ -1,7 +1,7 @@
 ---
 id: docs-002
 title: Add ReadTheDocs with MkDocs Material theme
-status: todo
+status: done
 priority: high
 tags:
 - docs

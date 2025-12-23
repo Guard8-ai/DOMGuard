@@ -1,7 +1,7 @@
 ---
 id: deployment-002
 title: Add GitHub CI workflow (build, test, clippy, fmt, security audit)
-status: todo
+status: done
 priority: critical
 tags:
 - deployment

@@ -1,7 +1,7 @@
 ---
 id: docs-005
 title: Add CONTRIBUTING.md with development guidelines
-status: todo
+status: done
 priority: medium
 tags:
 - docs

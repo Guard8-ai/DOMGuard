@@ -1,7 +1,7 @@
 ---
 id: docs-004
 title: Add CHANGELOG.md with version history
-status: todo
+status: done
 priority: medium
 tags:
 - docs

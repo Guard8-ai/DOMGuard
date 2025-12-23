@@ -1,7 +1,7 @@
 ---
 id: docs-003
 title: Create docs structure (getting-started, features, api-reference, contributing)
-status: todo
+status: done
 priority: high
 tags:
 - docs

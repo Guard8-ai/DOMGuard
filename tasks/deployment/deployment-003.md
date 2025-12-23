@@ -1,7 +1,7 @@
 ---
 id: deployment-003
 title: Add GitHub Release workflow (Linux, macOS, Windows binaries)
-status: todo
+status: done
 priority: critical
 tags:
 - deployment
