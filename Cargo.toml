@@ -39,3 +39,8 @@ path = "src/main.rs"
 lto = true
 codegen-units = 1
 strip = true
+
+# Pin reqwest to avoid Windows compile issue in 0.12.27
+# See: https://github.com/seanmonstar/reqwest/issues
+[patch.crates-io]
+reqwest = { git = "https://github.com/seanmonstar/reqwest", tag = "v0.12.16" }
