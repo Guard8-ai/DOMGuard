@@ -309,16 +309,18 @@ impl SiteInstructionsManager {
                 timeout_ms: Some(5000),
             }),
             cookie_consent: Some(CookieConsentConfig {
-                accept_selector: Some("[id*='accept'], [class*='accept'], .cookie-accept".to_string()),
-                reject_selector: Some("[id*='reject'], [class*='reject'], .cookie-reject".to_string()),
+                accept_selector: Some(
+                    "[id*='accept'], [class*='accept'], .cookie-accept".to_string(),
+                ),
+                reject_selector: Some(
+                    "[id*='reject'], [class*='reject'], .cookie-reject".to_string(),
+                ),
                 close_selector: Some(".cookie-close, .cookie-dismiss".to_string()),
                 action: "accept".to_string(),
             }),
             captcha: None,
             timeouts: None,
-            notes: vec![
-                "Add custom notes about this site here".to_string(),
-            ],
+            notes: vec!["Add custom notes about this site here".to_string()],
         }
     }
 }
@@ -327,7 +329,10 @@ impl SiteInstructionsManager {
 fn extract_domain(url: &str) -> Option<String> {
     // Handle URLs with and without protocol
     let url = url.trim();
-    let url = url.strip_prefix("https://").or_else(|| url.strip_prefix("http://")).unwrap_or(url);
+    let url = url
+        .strip_prefix("https://")
+        .or_else(|| url.strip_prefix("http://"))
+        .unwrap_or(url);
 
     // Get domain part (before first /)
     let domain = url.split('/').next()?;
@@ -402,9 +407,18 @@ mod tests {
 
     #[test]
     fn test_extract_domain() {
-        assert_eq!(extract_domain("https://example.com/path"), Some("example.com".to_string()));
-        assert_eq!(extract_domain("http://sub.example.com:8080/"), Some("sub.example.com".to_string()));
-        assert_eq!(extract_domain("example.com"), Some("example.com".to_string()));
+        assert_eq!(
+            extract_domain("https://example.com/path"),
+            Some("example.com".to_string())
+        );
+        assert_eq!(
+            extract_domain("http://sub.example.com:8080/"),
+            Some("sub.example.com".to_string())
+        );
+        assert_eq!(
+            extract_domain("example.com"),
+            Some("example.com".to_string())
+        );
     }
 
     #[test]
@@ -412,7 +426,10 @@ mod tests {
         assert!(matches_domain_pattern("example.com", "example.com"));
         assert!(!matches_domain_pattern("example.com", "sub.example.com"));
         assert!(matches_domain_pattern("*.example.com", "sub.example.com"));
-        assert!(matches_domain_pattern("*.example.com", "deep.sub.example.com"));
+        assert!(matches_domain_pattern(
+            "*.example.com",
+            "deep.sub.example.com"
+        ));
     }
 
     #[test]

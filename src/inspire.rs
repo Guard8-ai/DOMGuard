@@ -7,7 +7,9 @@ use serde::Serialize;
 
 use crate::cdp::CdpConnection;
 use crate::config::Config;
-use crate::output::{AnimationInfo, ColorInfo, DesignInspiration, Formatter, LayoutInfo, SpacingInfo, TypographyInfo};
+use crate::output::{
+    AnimationInfo, ColorInfo, DesignInspiration, Formatter, LayoutInfo, SpacingInfo, TypographyInfo,
+};
 
 /// Run inspire mode on a URL
 pub async fn run_inspire(
@@ -87,7 +89,8 @@ async fn extract_design(
     // JavaScript to extract design patterns
     let selector = component.unwrap_or("body");
 
-    let js = format!(r#"
+    let js = format!(
+        r#"
         (function() {{
             const root = document.querySelector('{}');
             if (!root) return null;
@@ -264,68 +267,98 @@ async fn extract_design(
                 }}
             }};
         }})()
-    "#, selector);
+    "#,
+        selector
+    );
 
-    let result = cdp.evaluate(&js).await
+    let result = cdp
+        .evaluate(&js)
+        .await
         .context("Failed to extract design patterns")?;
 
     if result.is_null() {
-        return Err(anyhow::anyhow!("No element matches selector \"{}\"", selector));
+        return Err(anyhow::anyhow!(
+            "No element matches selector \"{}\"",
+            selector
+        ));
     }
 
     // Parse the result
-    let colors: Vec<ColorInfo> = result.get("colors")
+    let colors: Vec<ColorInfo> = result
+        .get("colors")
         .and_then(|v| serde_json::from_value(v.clone()).ok())
         .unwrap_or_default();
 
-    let typography: Vec<TypographyInfo> = result.get("typography")
+    let typography: Vec<TypographyInfo> = result
+        .get("typography")
         .and_then(|v| serde_json::from_value(v.clone()).ok())
         .unwrap_or_default();
 
-    let spacing_raw = result.get("spacing").cloned().unwrap_or(serde_json::json!({}));
+    let spacing_raw = result
+        .get("spacing")
+        .cloned()
+        .unwrap_or(serde_json::json!({}));
     let spacing = SpacingInfo {
-        padding_values: spacing_raw.get("padding_values")
+        padding_values: spacing_raw
+            .get("padding_values")
             .and_then(|v| serde_json::from_value(v.clone()).ok())
             .unwrap_or_default(),
-        margin_values: spacing_raw.get("margin_values")
+        margin_values: spacing_raw
+            .get("margin_values")
             .and_then(|v| serde_json::from_value(v.clone()).ok())
             .unwrap_or_default(),
-        gap_values: spacing_raw.get("gap_values")
+        gap_values: spacing_raw
+            .get("gap_values")
             .and_then(|v| serde_json::from_value(v.clone()).ok())
             .unwrap_or_default(),
     };
 
-    let layout_raw = result.get("layout").cloned().unwrap_or(serde_json::json!({}));
+    let layout_raw = result
+        .get("layout")
+        .cloned()
+        .unwrap_or(serde_json::json!({}));
     let layout = LayoutInfo {
-        flex_containers: layout_raw.get("flex_containers")
+        flex_containers: layout_raw
+            .get("flex_containers")
             .and_then(|v| v.as_u64())
             .unwrap_or(0) as u32,
-        grid_containers: layout_raw.get("grid_containers")
+        grid_containers: layout_raw
+            .get("grid_containers")
             .and_then(|v| v.as_u64())
             .unwrap_or(0) as u32,
-        flex_directions: layout_raw.get("flex_directions")
+        flex_directions: layout_raw
+            .get("flex_directions")
             .and_then(|v| serde_json::from_value(v.clone()).ok())
             .unwrap_or_default(),
-        grid_templates: layout_raw.get("grid_templates")
+        grid_templates: layout_raw
+            .get("grid_templates")
             .and_then(|v| serde_json::from_value(v.clone()).ok())
             .unwrap_or_default(),
-        justify_content: layout_raw.get("justify_content")
+        justify_content: layout_raw
+            .get("justify_content")
             .and_then(|v| serde_json::from_value(v.clone()).ok())
             .unwrap_or_default(),
-        align_items: layout_raw.get("align_items")
+        align_items: layout_raw
+            .get("align_items")
             .and_then(|v| serde_json::from_value(v.clone()).ok())
             .unwrap_or_default(),
     };
 
-    let animations_raw = result.get("animations").cloned().unwrap_or(serde_json::json!({}));
+    let animations_raw = result
+        .get("animations")
+        .cloned()
+        .unwrap_or(serde_json::json!({}));
     let animations = AnimationInfo {
-        timing_functions: animations_raw.get("timing_functions")
+        timing_functions: animations_raw
+            .get("timing_functions")
             .and_then(|v| serde_json::from_value(v.clone()).ok())
             .unwrap_or_default(),
-        durations: animations_raw.get("durations")
+        durations: animations_raw
+            .get("durations")
             .and_then(|v| serde_json::from_value(v.clone()).ok())
             .unwrap_or_default(),
-        transitions: animations_raw.get("transitions")
+        transitions: animations_raw
+            .get("transitions")
             .and_then(|v| serde_json::from_value(v.clone()).ok())
             .unwrap_or_default(),
     };

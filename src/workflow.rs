@@ -249,7 +249,8 @@ impl WorkflowManager {
     /// Get a workflow by name (partial match)
     pub fn find_by_name(&self, name: &str) -> Vec<&Workflow> {
         let name_lower = name.to_lowercase();
-        self.cache.values()
+        self.cache
+            .values()
             .filter(|w| w.name.to_lowercase().contains(&name_lower))
             .collect()
     }
@@ -263,7 +264,8 @@ impl WorkflowManager {
 
     /// List workflows by tag
     pub fn list_by_tag(&self, tag: &str) -> Vec<&Workflow> {
-        self.cache.values()
+        self.cache
+            .values()
             .filter(|w| w.tags.iter().any(|t| t.eq_ignore_ascii_case(tag)))
             .collect()
     }
@@ -271,8 +273,14 @@ impl WorkflowManager {
     /// List workflows for a domain
     pub fn list_for_domain(&self, domain: &str) -> Vec<&Workflow> {
         let domain_lower = domain.to_lowercase();
-        self.cache.values()
-            .filter(|w| w.domain.as_ref().map(|d| d.to_lowercase().contains(&domain_lower)).unwrap_or(false))
+        self.cache
+            .values()
+            .filter(|w| {
+                w.domain
+                    .as_ref()
+                    .map(|d| d.to_lowercase().contains(&domain_lower))
+                    .unwrap_or(false)
+            })
             .collect()
     }
 
@@ -309,12 +317,18 @@ impl WorkflowManager {
     pub fn from_session(session: &crate::session::Session, name: &str) -> Workflow {
         let now = chrono::Utc::now();
 
-        let steps: Vec<WorkflowStep> = session.actions.iter().map(|action| {
-            WorkflowStep {
+        let steps: Vec<WorkflowStep> = session
+            .actions
+            .iter()
+            .map(|action| WorkflowStep {
                 name: Some(action.command.clone()),
                 action: action.command.clone(),
                 target: action.selector.clone(),
-                value: action.args.get("value").and_then(|v| v.as_str()).map(String::from),
+                value: action
+                    .args
+                    .get("value")
+                    .and_then(|v| v.as_str())
+                    .map(String::from),
                 timeout_ms: Some(5000),
                 required: true,
                 retry_count: 0,
@@ -322,15 +336,18 @@ impl WorkflowManager {
                 delay_after_ms: Some(200),
                 condition: None,
                 screenshot_after: false,
-            }
-        }).collect();
+            })
+            .collect();
 
         Workflow {
             id: format!("workflow-{}", &session.id[..8]),
             name: name.to_string(),
             description: session.name.clone(),
             domain: session.initial_url.as_ref().and_then(|u| {
-                u.split("://").nth(1).and_then(|s| s.split('/').next()).map(String::from)
+                u.split("://")
+                    .nth(1)
+                    .and_then(|s| s.split('/').next())
+                    .map(String::from)
             }),
             parameters: vec![],
             steps,
@@ -353,21 +370,19 @@ impl WorkflowManager {
             description: None,
             domain: None,
             parameters: vec![],
-            steps: vec![
-                WorkflowStep {
-                    name: Some("Navigate to site".to_string()),
-                    action: "navigate".to_string(),
-                    target: Some("{{url}}".to_string()),
-                    value: None,
-                    timeout_ms: Some(10000),
-                    required: true,
-                    retry_count: 0,
-                    delay_before_ms: None,
-                    delay_after_ms: Some(1000),
-                    condition: None,
-                    screenshot_after: false,
-                },
-            ],
+            steps: vec![WorkflowStep {
+                name: Some("Navigate to site".to_string()),
+                action: "navigate".to_string(),
+                target: Some("{{url}}".to_string()),
+                value: None,
+                timeout_ms: Some(10000),
+                required: true,
+                retry_count: 0,
+                delay_before_ms: None,
+                delay_after_ms: Some(1000),
+                condition: None,
+                screenshot_after: false,
+            }],
             tags: vec![],
             created_at: now,
             modified_at: now,
@@ -436,7 +451,8 @@ pub fn format_workflow(workflow: &Workflow) -> String {
         output.push_str("\n  Parameters:\n");
         for param in &workflow.parameters {
             let req = if param.required { "*" } else { "" };
-            output.push_str(&format!("    - {}{}: {} ({})\n",
+            output.push_str(&format!(
+                "    - {}{}: {} ({})\n",
                 param.name,
                 req,
                 param.description.as_deref().unwrap_or(""),
@@ -461,7 +477,8 @@ pub fn format_workflow_list(workflows: &[&Workflow]) -> String {
 
     for workflow in workflows {
         let domain = workflow.domain.as_deref().unwrap_or("-");
-        output.push_str(&format!("  {} - {} ({} steps, {})\n",
+        output.push_str(&format!(
+            "  {} - {} ({} steps, {})\n",
             workflow.id,
             workflow.name,
             workflow.steps.len(),
@@ -482,7 +499,8 @@ mod tests {
         params.insert("username".to_string(), "john".to_string());
         params.insert("password".to_string(), "secret".to_string());
 
-        let result = substitute_params("Hello {{username}}, your password is {{password}}", &params);
+        let result =
+            substitute_params("Hello {{username}}, your password is {{password}}", &params);
         assert_eq!(result, "Hello john, your password is secret");
     }
 

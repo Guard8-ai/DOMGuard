@@ -33,7 +33,11 @@ pub struct ActionExplanation {
 }
 
 /// Generate explanation for an action
-pub fn explain_action(action: &str, target: Option<&str>, context: &ExplanationContext) -> ActionExplanation {
+pub fn explain_action(
+    action: &str,
+    target: Option<&str>,
+    context: &ExplanationContext,
+) -> ActionExplanation {
     match action {
         // Click actions
         "click" => explain_click(target, context),
@@ -96,44 +100,75 @@ fn explain_click(target: Option<&str>, context: &ExplanationContext) -> ActionEx
     let (reason, expected) = if let Some(sel) = target {
         let sel_lower = sel.to_lowercase();
 
-        if sel_lower.contains("submit") || sel_lower.contains("login") || sel_lower.contains("sign") {
-            ("Submitting the form by clicking the submit button".to_string(),
-             "Form will be submitted and page may navigate".to_string())
+        if sel_lower.contains("submit") || sel_lower.contains("login") || sel_lower.contains("sign")
+        {
+            (
+                "Submitting the form by clicking the submit button".to_string(),
+                "Form will be submitted and page may navigate".to_string(),
+            )
         } else if sel_lower.contains("button") || sel_lower.contains("btn") {
-            ("Clicking a button to trigger an action".to_string(),
-             "Button action will be executed".to_string())
+            (
+                "Clicking a button to trigger an action".to_string(),
+                "Button action will be executed".to_string(),
+            )
         } else if sel_lower.contains("link") || sel.starts_with("a[") || sel.starts_with("a.") {
-            ("Clicking a link to navigate to another page".to_string(),
-             "Page will navigate to the link destination".to_string())
+            (
+                "Clicking a link to navigate to another page".to_string(),
+                "Page will navigate to the link destination".to_string(),
+            )
         } else if sel_lower.contains("menu") || sel_lower.contains("nav") {
-            ("Opening or selecting from a menu".to_string(),
-             "Menu will open or selection will be made".to_string())
-        } else if sel_lower.contains("close") || sel_lower.contains("dismiss") || sel_lower.contains("x") {
-            ("Closing a dialog, popup, or notification".to_string(),
-             "Element will close or be dismissed".to_string())
+            (
+                "Opening or selecting from a menu".to_string(),
+                "Menu will open or selection will be made".to_string(),
+            )
+        } else if sel_lower.contains("close")
+            || sel_lower.contains("dismiss")
+            || sel_lower.contains("x")
+        {
+            (
+                "Closing a dialog, popup, or notification".to_string(),
+                "Element will close or be dismissed".to_string(),
+            )
         } else if sel_lower.contains("checkbox") || sel.contains("[type=checkbox]") {
-            ("Toggling a checkbox option".to_string(),
-             "Checkbox state will change".to_string())
+            (
+                "Toggling a checkbox option".to_string(),
+                "Checkbox state will change".to_string(),
+            )
         } else if sel_lower.contains("radio") || sel.contains("[type=radio]") {
-            ("Selecting a radio button option".to_string(),
-             "Radio option will be selected".to_string())
+            (
+                "Selecting a radio button option".to_string(),
+                "Radio option will be selected".to_string(),
+            )
         } else if sel_lower.contains("tab") {
-            ("Switching to a different tab or section".to_string(),
-             "Tab content will be displayed".to_string())
-        } else if sel_lower.contains("expand") || sel_lower.contains("collapse") || sel_lower.contains("accordion") {
-            ("Expanding or collapsing a section".to_string(),
-             "Section visibility will toggle".to_string())
+            (
+                "Switching to a different tab or section".to_string(),
+                "Tab content will be displayed".to_string(),
+            )
+        } else if sel_lower.contains("expand")
+            || sel_lower.contains("collapse")
+            || sel_lower.contains("accordion")
+        {
+            (
+                "Expanding or collapsing a section".to_string(),
+                "Section visibility will toggle".to_string(),
+            )
         } else if sel.starts_with("(") && sel.contains(",") {
             // Coordinates
-            ("Clicking at specific screen coordinates".to_string(),
-             "Click event will be triggered at location".to_string())
+            (
+                "Clicking at specific screen coordinates".to_string(),
+                "Click event will be triggered at location".to_string(),
+            )
         } else {
-            (format!("Clicking on element matching '{}'", sel),
-             "Element will receive click event".to_string())
+            (
+                format!("Clicking on element matching '{}'", sel),
+                "Element will receive click event".to_string(),
+            )
         }
     } else {
-        ("Clicking on specified element".to_string(),
-         "Click event will be triggered".to_string())
+        (
+            "Clicking on specified element".to_string(),
+            "Click event will be triggered".to_string(),
+        )
     };
 
     ActionExplanation {
@@ -160,33 +195,54 @@ fn explain_type(target: Option<&str>, context: &ExplanationContext) -> ActionExp
         let sel_lower = sel.to_lowercase();
 
         if sel_lower.contains("search") {
-            ("Entering search query into search field".to_string(),
-             "Search results will be populated".to_string())
+            (
+                "Entering search query into search field".to_string(),
+                "Search results will be populated".to_string(),
+            )
         } else if sel_lower.contains("email") {
-            ("Entering email address".to_string(),
-             "Email field will be filled".to_string())
+            (
+                "Entering email address".to_string(),
+                "Email field will be filled".to_string(),
+            )
         } else if sel_lower.contains("password") {
-            ("Entering password (credentials masked)".to_string(),
-             "Password field will be filled".to_string())
+            (
+                "Entering password (credentials masked)".to_string(),
+                "Password field will be filled".to_string(),
+            )
         } else if sel_lower.contains("username") || sel_lower.contains("user") {
-            ("Entering username".to_string(),
-             "Username field will be filled".to_string())
-        } else if sel_lower.contains("comment") || sel_lower.contains("message") || sel_lower.contains("textarea") {
-            ("Entering text content".to_string(),
-             "Text area will be filled".to_string())
+            (
+                "Entering username".to_string(),
+                "Username field will be filled".to_string(),
+            )
+        } else if sel_lower.contains("comment")
+            || sel_lower.contains("message")
+            || sel_lower.contains("textarea")
+        {
+            (
+                "Entering text content".to_string(),
+                "Text area will be filled".to_string(),
+            )
         } else if sel_lower.contains("address") {
-            ("Entering address information".to_string(),
-             "Address field will be filled".to_string())
+            (
+                "Entering address information".to_string(),
+                "Address field will be filled".to_string(),
+            )
         } else if sel == "focused" {
-            ("Typing into currently focused element".to_string(),
-             "Focused element will receive text".to_string())
+            (
+                "Typing into currently focused element".to_string(),
+                "Focused element will receive text".to_string(),
+            )
         } else {
-            (format!("Typing text into '{}'", sel),
-             "Text will be entered into the field".to_string())
+            (
+                format!("Typing text into '{}'", sel),
+                "Text will be entered into the field".to_string(),
+            )
         }
     } else {
-        ("Typing text into field".to_string(),
-         "Field will be filled with text".to_string())
+        (
+            "Typing text into field".to_string(),
+            "Field will be filled with text".to_string(),
+        )
     };
 
     ActionExplanation {
@@ -202,29 +258,50 @@ fn explain_key(target: Option<&str>, _context: &ExplanationContext) -> ActionExp
     let key_lower = key.to_lowercase();
 
     let (reason, expected) = if key_lower == "enter" || key_lower == "return" {
-        ("Pressing Enter to submit or confirm".to_string(),
-         "Form submission or action confirmation".to_string())
+        (
+            "Pressing Enter to submit or confirm".to_string(),
+            "Form submission or action confirmation".to_string(),
+        )
     } else if key_lower == "tab" {
-        ("Pressing Tab to move to next field".to_string(),
-         "Focus will move to next element".to_string())
+        (
+            "Pressing Tab to move to next field".to_string(),
+            "Focus will move to next element".to_string(),
+        )
     } else if key_lower == "escape" || key_lower == "esc" {
-        ("Pressing Escape to cancel or close".to_string(),
-         "Dialog or action will be cancelled".to_string())
-    } else if key_lower.contains("arrow") || key_lower.contains("up") || key_lower.contains("down") || key_lower.contains("left") || key_lower.contains("right") {
-        ("Using arrow keys for navigation".to_string(),
-         "Selection or cursor will move".to_string())
+        (
+            "Pressing Escape to cancel or close".to_string(),
+            "Dialog or action will be cancelled".to_string(),
+        )
+    } else if key_lower.contains("arrow")
+        || key_lower.contains("up")
+        || key_lower.contains("down")
+        || key_lower.contains("left")
+        || key_lower.contains("right")
+    {
+        (
+            "Using arrow keys for navigation".to_string(),
+            "Selection or cursor will move".to_string(),
+        )
     } else if key_lower.contains("cmd+") || key_lower.contains("ctrl+") {
-        (format!("Executing keyboard shortcut: {}", key),
-         "Shortcut action will be triggered".to_string())
+        (
+            format!("Executing keyboard shortcut: {}", key),
+            "Shortcut action will be triggered".to_string(),
+        )
     } else if key_lower == "backspace" || key_lower == "delete" {
-        ("Pressing delete key".to_string(),
-         "Selected content will be deleted".to_string())
+        (
+            "Pressing delete key".to_string(),
+            "Selected content will be deleted".to_string(),
+        )
     } else if key_lower == "space" {
-        ("Pressing Space".to_string(),
-         "Space character or button activation".to_string())
+        (
+            "Pressing Space".to_string(),
+            "Space character or button activation".to_string(),
+        )
     } else {
-        (format!("Pressing key: {}", key),
-         "Key event will be dispatched".to_string())
+        (
+            format!("Pressing key: {}", key),
+            "Key event will be dispatched".to_string(),
+        )
     };
 
     ActionExplanation {
@@ -346,18 +423,26 @@ fn explain_wait(target: Option<&str>, _context: &ExplanationContext) -> ActionEx
 
     let (reason, expected) = if let Some(sel) = target {
         if sel.contains("gone") {
-            ("Waiting for element to disappear (e.g., loading spinner)".to_string(),
-             "Element will no longer be in DOM".to_string())
+            (
+                "Waiting for element to disappear (e.g., loading spinner)".to_string(),
+                "Element will no longer be in DOM".to_string(),
+            )
         } else if sel.contains("text") {
-            ("Waiting for specific text to appear on page".to_string(),
-             "Text will be present in page content".to_string())
+            (
+                "Waiting for specific text to appear on page".to_string(),
+                "Text will be present in page content".to_string(),
+            )
         } else {
-            (format!("Waiting for element '{}' to appear", sel),
-             "Element will be present in DOM".to_string())
+            (
+                format!("Waiting for element '{}' to appear", sel),
+                "Element will be present in DOM".to_string(),
+            )
         }
     } else {
-        ("Waiting for condition to be met".to_string(),
-         "Condition will be satisfied".to_string())
+        (
+            "Waiting for condition to be met".to_string(),
+            "Condition will be satisfied".to_string(),
+        )
     };
 
     ActionExplanation {
@@ -409,7 +494,11 @@ fn explain_dialog(target: Option<&str>, _context: &ExplanationContext) -> Action
 }
 
 fn explain_screenshot(target: Option<&str>, _context: &ExplanationContext) -> ActionExplanation {
-    let scope = if target.is_some() { "element" } else { "viewport" };
+    let scope = if target.is_some() {
+        "element"
+    } else {
+        "viewport"
+    };
 
     ActionExplanation {
         action: format!("screenshot {}", target.unwrap_or("")),
@@ -419,7 +508,10 @@ fn explain_screenshot(target: Option<&str>, _context: &ExplanationContext) -> Ac
     }
 }
 
-fn explain_screenshot_region(target: Option<&str>, _context: &ExplanationContext) -> ActionExplanation {
+fn explain_screenshot_region(
+    target: Option<&str>,
+    _context: &ExplanationContext,
+) -> ActionExplanation {
     ActionExplanation {
         action: format!("screenshot_region {}", target.unwrap_or("region")),
         reason: "Capturing specific region of the screen".to_string(),

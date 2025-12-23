@@ -207,7 +207,10 @@ pub fn parse_captcha_detection(js_result: &serde_json::Value) -> CaptchaDetectio
         return CaptchaDetection::default();
     }
 
-    let detected = js_result.get("detected").and_then(|v| v.as_bool()).unwrap_or(false);
+    let detected = js_result
+        .get("detected")
+        .and_then(|v| v.as_bool())
+        .unwrap_or(false);
 
     if !detected {
         return CaptchaDetection::default();
@@ -289,7 +292,14 @@ pub fn format_captcha_detection(detection: &CaptchaDetection) -> String {
         output.push_str(&format!("   Element: {}\n", selector));
     }
 
-    output.push_str(&format!("   Solved: {}\n", if detection.appears_solved { "Yes" } else { "No" }));
+    output.push_str(&format!(
+        "   Solved: {}\n",
+        if detection.appears_solved {
+            "Yes"
+        } else {
+            "No"
+        }
+    ));
 
     let action = match detection.recommendation {
         CaptchaRecommendation::Continue => "Continue with automation",
@@ -326,7 +336,10 @@ mod tests {
         let detection = parse_captcha_detection(&result);
         assert!(detection.detected);
         assert_eq!(detection.captcha_type, Some(CaptchaType::RecaptchaV2));
-        assert_eq!(detection.recommendation, CaptchaRecommendation::PauseForHuman);
+        assert_eq!(
+            detection.recommendation,
+            CaptchaRecommendation::PauseForHuman
+        );
     }
 
     #[test]
@@ -341,7 +354,10 @@ mod tests {
 
         let detection = parse_captcha_detection(&result);
         assert!(detection.detected);
-        assert_eq!(detection.captcha_type, Some(CaptchaType::CloudflareChallenge));
+        assert_eq!(
+            detection.captcha_type,
+            Some(CaptchaType::CloudflareChallenge)
+        );
         assert_eq!(detection.recommendation, CaptchaRecommendation::Retry);
     }
 

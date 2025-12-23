@@ -23,7 +23,9 @@ pub enum ThrottleMode {
     /// Disable all throttling
     Off,
     /// CPU throttling (rate: 1 = no throttle, 4 = 4x slowdown)
-    Cpu { rate: f64 },
+    Cpu {
+        rate: f64,
+    },
     /// Network throttling presets
     Network3g,
     NetworkSlow3g,
@@ -39,22 +41,48 @@ pub enum ThrottleMode {
 /// Debug subcommand types
 #[derive(Debug, Clone)]
 pub enum DebugCommand {
-    Dom { selector: Option<String> },
-    Styles { selector: String },
-    Console { follow: bool, filter: Option<String> },
-    Network { filter: Option<String> },
-    Eval { expression: String },
+    Dom {
+        selector: Option<String>,
+    },
+    Styles {
+        selector: String,
+    },
+    Console {
+        follow: bool,
+        filter: Option<String>,
+    },
+    Network {
+        filter: Option<String>,
+    },
+    Eval {
+        expression: String,
+    },
     Storage,
     Cookies,
-    Aria { selector: Option<String> },
-    Tabs { action: TabCommand },
+    Aria {
+        selector: Option<String>,
+    },
+    Tabs {
+        action: TabCommand,
+    },
     // Chrome DevTools MCP features
     Performance,
-    Snapshot { output: Option<std::path::PathBuf> },
-    Throttle { mode: ThrottleMode },
-    NetworkDetails { filter: Option<String> },
+    Snapshot {
+        output: Option<std::path::PathBuf>,
+    },
+    Throttle {
+        mode: ThrottleMode,
+    },
+    NetworkDetails {
+        filter: Option<String>,
+    },
     // Element highlighting
-    Highlight { selector: String, color: String, duration: u64, all: bool },
+    Highlight {
+        selector: String,
+        color: String,
+        duration: u64,
+        all: bool,
+    },
     ClearHighlights,
     // CAPTCHA detection
     Captcha,
@@ -82,11 +110,16 @@ pub async fn run_debug(
         DebugCommand::Performance => debug_performance(cdp, formatter).await,
         DebugCommand::Snapshot { output } => debug_snapshot(cdp, output, formatter).await,
         DebugCommand::Throttle { mode } => debug_throttle(cdp, mode, formatter).await,
-        DebugCommand::NetworkDetails { filter } => debug_network_details(cdp, filter.as_deref(), formatter).await,
-        // Element highlighting
-        DebugCommand::Highlight { selector, color, duration, all } => {
-            debug_highlight(cdp, &selector, &color, duration, all, formatter).await
+        DebugCommand::NetworkDetails { filter } => {
+            debug_network_details(cdp, filter.as_deref(), formatter).await
         }
+        // Element highlighting
+        DebugCommand::Highlight {
+            selector,
+            color,
+            duration,
+            all,
+        } => debug_highlight(cdp, &selector, &color, duration, all, formatter).await,
         DebugCommand::ClearHighlights => debug_clear_highlights(cdp, formatter).await,
         // CAPTCHA detection
         DebugCommand::Captcha => debug_captcha(cdp, formatter).await,
@@ -101,7 +134,8 @@ async fn debug_dom(
 ) -> Result<()> {
     let dom_tree = if let Some(sel) = selector {
         // Get specific element(s)
-        let js = format!(r#"
+        let js = format!(
+            r#"
             (function() {{
                 const elements = document.querySelectorAll('{}');
                 if (elements.length === 0) return null;
@@ -125,7 +159,9 @@ async fn debug_dom(
 
                 return Array.from(elements).map(el => nodeToJson(el, 0));
             }})()
-        "#, sel);
+        "#,
+            sel
+        );
 
         let result = cdp.evaluate(&js).await?;
         if result.is_null() {
@@ -173,13 +209,22 @@ async fn debug_dom(
             let obj = value.as_object()?;
             Some(DomNode {
                 tag: obj.get("tag")?.as_str()?.to_string(),
-                id: obj.get("id").and_then(|v| v.as_str()).map(|s| s.to_string()),
+                id: obj
+                    .get("id")
+                    .and_then(|v| v.as_str())
+                    .map(|s| s.to_string()),
                 classes: obj.get("classes").and_then(|v| v.as_array()).map(|arr| {
-                    arr.iter().filter_map(|c| c.as_str().map(|s| s.to_string())).collect()
+                    arr.iter()
+                        .filter_map(|c| c.as_str().map(|s| s.to_string()))
+                        .collect()
                 }),
                 attributes: None,
-                text: obj.get("text").and_then(|v| v.as_str()).map(|s| s.to_string()),
-                children: obj.get("children")
+                text: obj
+                    .get("text")
+                    .and_then(|v| v.as_str())
+                    .map(|s| s.to_string()),
+                children: obj
+                    .get("children")
                     .and_then(|v| v.as_array())
                     .map(|arr| arr.iter().filter_map(json_to_dom_node).collect())
                     .unwrap_or_default(),
@@ -203,12 +248,9 @@ async fn debug_dom(
 }
 
 /// Debug computed styles
-async fn debug_styles(
-    cdp: &CdpConnection,
-    selector: &str,
-    formatter: &Formatter,
-) -> Result<()> {
-    let js = format!(r#"
+async fn debug_styles(cdp: &CdpConnection, selector: &str, formatter: &Formatter) -> Result<()> {
+    let js = format!(
+        r#"
         (function() {{
             const el = document.querySelector('{}');
             if (!el) return null;
@@ -232,12 +274,17 @@ async fn debug_styles(
             }}
             return result;
         }})()
-    "#, selector);
+    "#,
+        selector
+    );
 
     let result = cdp.evaluate(&js).await?;
 
     if result.is_null() {
-        return Err(anyhow::anyhow!("No element matches selector \"{}\"", selector));
+        return Err(anyhow::anyhow!(
+            "No element matches selector \"{}\"",
+            selector
+        ));
     }
 
     if formatter.is_json() {
@@ -269,7 +316,8 @@ async fn debug_console(
 
     // Apply filter if specified
     let filtered: Vec<_> = if let Some(f) = filter {
-        entries.iter()
+        entries
+            .iter()
             .filter(|e| e.text.contains(f) || e.source.contains(f))
             .collect()
     } else {
@@ -277,14 +325,15 @@ async fn debug_console(
     };
 
     // Convert ConsoleEntry to ConsoleMessage for output
-    let messages: Vec<ConsoleMessage> = filtered.iter().map(|e| {
-        ConsoleMessage {
+    let messages: Vec<ConsoleMessage> = filtered
+        .iter()
+        .map(|e| ConsoleMessage {
             level: e.level.clone(),
             text: e.text.clone(),
             url: e.url.clone(),
             line: e.line,
-        }
-    }).collect();
+        })
+        .collect();
 
     if formatter.is_json() {
         formatter.output_json(&messages);
@@ -342,10 +391,17 @@ async fn debug_network(
         arr.iter()
             .filter_map(|r| {
                 Some(NetworkRequest {
-                    method: r.get("method").and_then(|m| m.as_str()).unwrap_or("GET").to_string(),
+                    method: r
+                        .get("method")
+                        .and_then(|m| m.as_str())
+                        .unwrap_or("GET")
+                        .to_string(),
                     url: r.get("url").and_then(|u| u.as_str())?.to_string(),
                     status: None, // Performance API doesn't provide status
-                    mime_type: r.get("type").and_then(|t| t.as_str()).map(|s| s.to_string()),
+                    mime_type: r
+                        .get("type")
+                        .and_then(|t| t.as_str())
+                        .map(|s| s.to_string()),
                     size_bytes: r.get("size_bytes").and_then(|s| s.as_u64()),
                 })
             })
@@ -356,9 +412,7 @@ async fn debug_network(
 
     // Apply filter
     let filtered: Vec<_> = if let Some(f) = filter {
-        requests.into_iter()
-            .filter(|r| r.url.contains(f))
-            .collect()
+        requests.into_iter().filter(|r| r.url.contains(f)).collect()
     } else {
         requests
     };
@@ -377,11 +431,7 @@ async fn debug_network(
 }
 
 /// Debug eval - execute JavaScript
-async fn debug_eval(
-    cdp: &CdpConnection,
-    expression: &str,
-    formatter: &Formatter,
-) -> Result<()> {
+async fn debug_eval(cdp: &CdpConnection, expression: &str, formatter: &Formatter) -> Result<()> {
     let result = cdp.evaluate(expression).await?;
 
     if formatter.is_json() {
@@ -394,10 +444,7 @@ async fn debug_eval(
 }
 
 /// Debug storage (localStorage and sessionStorage)
-async fn debug_storage(
-    cdp: &CdpConnection,
-    formatter: &Formatter,
-) -> Result<()> {
+async fn debug_storage(cdp: &CdpConnection, formatter: &Formatter) -> Result<()> {
     let local_storage = cdp.get_local_storage().await?;
     let session_storage = cdp.get_session_storage().await?;
 
@@ -454,10 +501,7 @@ async fn debug_storage(
 }
 
 /// Debug cookies
-async fn debug_cookies(
-    cdp: &CdpConnection,
-    formatter: &Formatter,
-) -> Result<()> {
+async fn debug_cookies(cdp: &CdpConnection, formatter: &Formatter) -> Result<()> {
     let result = cdp.get_cookies().await?;
 
     if formatter.is_json() {
@@ -511,14 +555,29 @@ async fn debug_aria(
             let obj = value.as_object()?;
             Some(AriaNode {
                 role: obj.get("role")?.as_str()?.to_string(),
-                name: obj.get("name").and_then(|v| v.as_str()).map(|s| s.to_string()),
-                value: obj.get("value").and_then(|v| v.as_str()).map(|s| s.to_string()),
-                description: obj.get("description").and_then(|v| v.as_str()).map(|s| s.to_string()),
-                states: obj.get("states")
+                name: obj
+                    .get("name")
+                    .and_then(|v| v.as_str())
+                    .map(|s| s.to_string()),
+                value: obj
+                    .get("value")
+                    .and_then(|v| v.as_str())
+                    .map(|s| s.to_string()),
+                description: obj
+                    .get("description")
+                    .and_then(|v| v.as_str())
+                    .map(|s| s.to_string()),
+                states: obj
+                    .get("states")
                     .and_then(|v| v.as_array())
-                    .map(|arr| arr.iter().filter_map(|s| s.as_str().map(|s| s.to_string())).collect())
+                    .map(|arr| {
+                        arr.iter()
+                            .filter_map(|s| s.as_str().map(|s| s.to_string()))
+                            .collect()
+                    })
                     .unwrap_or_default(),
-                children: obj.get("children")
+                children: obj
+                    .get("children")
                     .and_then(|v| v.as_array())
                     .map(|arr| arr.iter().filter_map(json_to_aria_node).collect())
                     .unwrap_or_default(),
@@ -535,11 +594,7 @@ async fn debug_aria(
 }
 
 /// Debug tabs - list, create, switch, close browser tabs
-async fn debug_tabs(
-    cdp: &CdpConnection,
-    action: TabCommand,
-    formatter: &Formatter,
-) -> Result<()> {
+async fn debug_tabs(cdp: &CdpConnection, action: TabCommand, formatter: &Formatter) -> Result<()> {
     match action {
         TabCommand::List => {
             let tabs = cdp.list_tabs().await?;
@@ -609,10 +664,7 @@ async fn debug_tabs(
 // ============================================================================
 
 /// Debug performance metrics (Core Web Vitals and runtime metrics)
-async fn debug_performance(
-    cdp: &CdpConnection,
-    formatter: &Formatter,
-) -> Result<()> {
+async fn debug_performance(cdp: &CdpConnection, formatter: &Formatter) -> Result<()> {
     let metrics = cdp.get_performance_metrics().await?;
 
     if formatter.is_json() {
@@ -648,7 +700,7 @@ async fn debug_performance(
             for metric in cdp_metrics {
                 if let (Some(name), Some(value)) = (
                     metric.get("name").and_then(|n| n.as_str()),
-                    metric.get("value").and_then(|v| v.as_f64())
+                    metric.get("value").and_then(|v| v.as_f64()),
                 ) {
                     // Format important metrics nicely
                     let formatted = match name {
@@ -678,7 +730,8 @@ async fn debug_snapshot(
     let html = cdp.get_full_dom_snapshot().await?;
 
     let output_path = output.unwrap_or_else(|| {
-        std::path::PathBuf::from(format!("snapshot_{}.html",
+        std::path::PathBuf::from(format!(
+            "snapshot_{}.html",
             std::time::SystemTime::now()
                 .duration_since(std::time::UNIX_EPOCH)
                 .unwrap()
@@ -735,7 +788,8 @@ async fn debug_throttle(
         }
         ThrottleMode::Network3g => {
             // 3G: ~1.6 Mbps down, 750 Kbps up, 300ms latency
-            cdp.set_network_throttling(1600.0, 750.0, 300.0, false).await?;
+            cdp.set_network_throttling(1600.0, 750.0, 300.0, false)
+                .await?;
             if formatter.is_json() {
                 formatter.output_json(&serde_json::json!({
                     "action": "throttle",
@@ -748,7 +802,8 @@ async fn debug_throttle(
         }
         ThrottleMode::NetworkSlow3g => {
             // Slow 3G: ~400 Kbps down, 400 Kbps up, 2000ms latency
-            cdp.set_network_throttling(400.0, 400.0, 2000.0, false).await?;
+            cdp.set_network_throttling(400.0, 400.0, 2000.0, false)
+                .await?;
             if formatter.is_json() {
                 formatter.output_json(&serde_json::json!({
                     "action": "throttle",
@@ -756,7 +811,8 @@ async fn debug_throttle(
                     "preset": "slow3g"
                 }));
             } else {
-                formatter.success("Network throttling enabled: Slow 3G (400 Kbps down, 2s latency)");
+                formatter
+                    .success("Network throttling enabled: Slow 3G (400 Kbps down, 2s latency)");
             }
         }
         ThrottleMode::NetworkOffline => {
@@ -771,8 +827,13 @@ async fn debug_throttle(
                 formatter.success("Network throttling enabled: Offline mode");
             }
         }
-        ThrottleMode::NetworkCustom { download_kbps, upload_kbps, latency_ms } => {
-            cdp.set_network_throttling(*download_kbps, *upload_kbps, *latency_ms, false).await?;
+        ThrottleMode::NetworkCustom {
+            download_kbps,
+            upload_kbps,
+            latency_ms,
+        } => {
+            cdp.set_network_throttling(*download_kbps, *upload_kbps, *latency_ms, false)
+                .await?;
             if formatter.is_json() {
                 formatter.output_json(&serde_json::json!({
                     "action": "throttle",
@@ -822,7 +883,10 @@ async fn debug_network_details(
 
                     // Status
                     if let Some(status) = req.get("status").and_then(|v| v.as_i64()) {
-                        let status_text = req.get("status_text").and_then(|v| v.as_str()).unwrap_or("");
+                        let status_text = req
+                            .get("status_text")
+                            .and_then(|v| v.as_str())
+                            .unwrap_or("");
                         println!("  Status: {} {}", status, status_text);
                     }
 
@@ -865,7 +929,12 @@ async fn debug_network_details(
                     // Headers (abbreviated)
                     if let Some(headers) = req.get("response_headers").and_then(|v| v.as_object()) {
                         println!("  Response Headers:");
-                        let important_headers = ["content-type", "cache-control", "content-encoding", "server"];
+                        let important_headers = [
+                            "content-type",
+                            "cache-control",
+                            "content-encoding",
+                            "server",
+                        ];
                         for header in important_headers {
                             if let Some(val) = headers.get(header).and_then(|v| v.as_str()) {
                                 println!("    {}: {}", header, val);
@@ -950,10 +1019,7 @@ async fn debug_highlight(
 }
 
 /// Clear all highlights from the page
-async fn debug_clear_highlights(
-    cdp: &CdpConnection,
-    formatter: &Formatter,
-) -> Result<()> {
+async fn debug_clear_highlights(cdp: &CdpConnection, formatter: &Formatter) -> Result<()> {
     cdp.clear_all_highlights().await?;
 
     if formatter.is_json() {
@@ -969,11 +1035,10 @@ async fn debug_clear_highlights(
 }
 
 /// Detect CAPTCHAs on the current page
-async fn debug_captcha(
-    cdp: &CdpConnection,
-    formatter: &Formatter,
-) -> Result<()> {
-    use crate::captcha::{captcha_detection_script, parse_captcha_detection, format_captcha_detection};
+async fn debug_captcha(cdp: &CdpConnection, formatter: &Formatter) -> Result<()> {
+    use crate::captcha::{
+        captcha_detection_script, format_captcha_detection, parse_captcha_detection,
+    };
 
     let script = captcha_detection_script();
     let result = cdp.evaluate(script).await?;

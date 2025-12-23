@@ -105,14 +105,14 @@ impl CdpConnection {
         for i in 0..30 {
             tokio::time::sleep(std::time::Duration::from_millis(100)).await;
             if let Ok((browser, mut handler)) = Browser::connect(&ws_url).await {
-                tokio::spawn(async move {
-                    while let Some(_event) = handler.next().await {}
-                });
+                tokio::spawn(async move { while let Some(_event) = handler.next().await {} });
                 self.browser = Some(Arc::new(Mutex::new(browser)));
                 return Ok(());
             }
             if i == 29 {
-                return Err(anyhow!("Chrome started but failed to connect via WebSocket"));
+                return Err(anyhow!(
+                    "Chrome started but failed to connect via WebSocket"
+                ));
             }
         }
 
@@ -152,7 +152,9 @@ impl CdpConnection {
 
     /// Get the current page or first available page
     pub async fn get_page(&self) -> Result<Page> {
-        let browser = self.browser.as_ref()
+        let browser = self
+            .browser
+            .as_ref()
             .ok_or_else(|| anyhow!("Not connected to Chrome"))?;
 
         let mut browser = browser.lock().await;
@@ -193,12 +195,16 @@ impl CdpConnection {
 
         // Use best target or fallback
         if let Some(target_id) = best_target.or(fallback_target) {
-            return browser.get_page(target_id).await
+            return browser
+                .get_page(target_id)
+                .await
                 .context("Failed to attach to page");
         }
 
         // No existing pages - create one
-        browser.new_page("about:blank").await
+        browser
+            .new_page("about:blank")
+            .await
             .context("Failed to create page")
     }
 
@@ -209,7 +215,9 @@ impl CdpConnection {
 
     /// List all open tabs (targets)
     pub async fn list_tabs(&self) -> Result<Vec<TabInfo>> {
-        let browser = self.browser.as_ref()
+        let browser = self
+            .browser
+            .as_ref()
             .ok_or_else(|| anyhow!("Not connected to Chrome"))?;
         let mut browser = browser.lock().await;
 
@@ -238,11 +246,15 @@ impl CdpConnection {
 
     /// Create a new tab
     pub async fn new_tab(&self, url: Option<&str>) -> Result<String> {
-        let browser = self.browser.as_ref()
+        let browser = self
+            .browser
+            .as_ref()
             .ok_or_else(|| anyhow!("Not connected to Chrome"))?;
         let browser = browser.lock().await;
 
-        let page = browser.new_page(url.unwrap_or("about:blank")).await
+        let page = browser
+            .new_page(url.unwrap_or("about:blank"))
+            .await
             .context("Failed to create new tab")?;
 
         let target_id = page.target_id().as_ref().to_string();
@@ -251,7 +263,9 @@ impl CdpConnection {
 
     /// Switch to a specific tab by ID
     pub async fn switch_tab(&self, target_id: &str) -> Result<()> {
-        let browser = self.browser.as_ref()
+        let browser = self
+            .browser
+            .as_ref()
             .ok_or_else(|| anyhow!("Not connected to Chrome"))?;
         let browser = browser.lock().await;
 
@@ -259,7 +273,9 @@ impl CdpConnection {
         let tid = TargetId::from(target_id.to_string());
 
         // Use CDP command directly to activate the target
-        browser.execute(ActivateTargetParams::new(tid)).await
+        browser
+            .execute(ActivateTargetParams::new(tid))
+            .await
             .context("Failed to switch to tab")?;
 
         Ok(())
@@ -267,7 +283,9 @@ impl CdpConnection {
 
     /// Close a tab by ID
     pub async fn close_tab(&self, target_id: &str) -> Result<()> {
-        let browser = self.browser.as_ref()
+        let browser = self
+            .browser
+            .as_ref()
             .ok_or_else(|| anyhow!("Not connected to Chrome"))?;
         let browser = browser.lock().await;
 
@@ -275,7 +293,9 @@ impl CdpConnection {
         let tid = TargetId::from(target_id.to_string());
 
         // Use CDP command directly to close the target
-        browser.execute(CloseTargetParams::new(tid)).await
+        browser
+            .execute(CloseTargetParams::new(tid))
+            .await
             .context("Failed to close tab")?;
 
         Ok(())
@@ -283,10 +303,12 @@ impl CdpConnection {
 
     /// Query selector all via JavaScript
     pub async fn query_selector_all(&self, selector: &str) -> Result<Vec<i64>> {
-        let result = self.evaluate(&format!(
-            "Array.from(document.querySelectorAll('{}')).length",
-            selector.replace('\'', "\\'")
-        )).await?;
+        let result = self
+            .evaluate(&format!(
+                "Array.from(document.querySelectorAll('{}')).length",
+                selector.replace('\'', "\\'")
+            ))
+            .await?;
 
         let count = result.as_i64().unwrap_or(0);
         Ok((0..count).collect())
@@ -304,7 +326,9 @@ impl CdpConnection {
             CaptureScreenshotParams::default()
         };
 
-        let data = page.execute(params).await
+        let data = page
+            .execute(params)
+            .await
             .context("Failed to capture screenshot")?;
 
         base64::engine::general_purpose::STANDARD
@@ -316,7 +340,9 @@ impl CdpConnection {
     pub async fn evaluate(&self, expression: &str) -> Result<serde_json::Value> {
         let page = self.get_page().await?;
 
-        let result = page.evaluate(expression).await
+        let result = page
+            .evaluate(expression)
+            .await
             .context("Failed to evaluate JavaScript")?;
 
         Ok(result.value().cloned().unwrap_or(serde_json::Value::Null))
@@ -332,7 +358,8 @@ impl CdpConnection {
         let escaped_url = url.replace('\\', "\\\\").replace('\'', "\\'");
 
         // Start navigation
-        self.evaluate(&format!("window.location.href = '{}'", escaped_url)).await?;
+        self.evaluate(&format!("window.location.href = '{}'", escaped_url))
+            .await?;
 
         // Wait for navigation to complete (check document.readyState)
         let timeout = Duration::from_secs(30);
@@ -349,8 +376,9 @@ impl CdpConnection {
 
             if let (Some(state), Some(cur)) = (ready_state.as_str(), current_url.as_str()) {
                 // Check if we're on the target URL (or redirected) and page is loaded
-                if (cur.starts_with(url) || cur != "about:blank") &&
-                   (state == "complete" || state == "interactive") {
+                if (cur.starts_with(url) || cur != "about:blank")
+                    && (state == "complete" || state == "interactive")
+                {
                     return Ok(());
                 }
             }
@@ -362,7 +390,8 @@ impl CdpConnection {
     /// Get current URL
     pub async fn current_url(&self) -> Result<String> {
         let result = self.evaluate("window.location.href").await?;
-        result.as_str()
+        result
+            .as_str()
             .map(|s| s.to_string())
             .ok_or_else(|| anyhow!("Failed to get current URL"))
     }
@@ -375,16 +404,19 @@ impl CdpConnection {
                 const el = document.elementFromPoint({}, {});
                 if (el) el.click();
             }})()
-            "#, x, y
-        )).await?;
+            "#,
+            x, y
+        ))
+        .await?;
         Ok(())
     }
 
     /// Click element by selector using JavaScript (more reliable than CDP)
     pub async fn click(&self, selector: &str) -> Result<()> {
         let escaped = selector.replace('\\', "\\\\").replace('\'', "\\'");
-        let result = self.evaluate(&format!(
-            r#"
+        let result = self
+            .evaluate(&format!(
+                r#"
             (function() {{
                 const el = document.querySelector('{}');
                 if (!el) return false;
@@ -392,8 +424,10 @@ impl CdpConnection {
                 el.click();
                 return true;
             }})()
-            "#, escaped
-        )).await?;
+            "#,
+                escaped
+            ))
+            .await?;
 
         if result.as_bool() != Some(true) {
             return Err(anyhow!("No element matches selector \"{}\"", selector));
@@ -404,9 +438,13 @@ impl CdpConnection {
     /// Type text into element using JavaScript
     pub async fn type_into(&self, selector: &str, text: &str) -> Result<()> {
         let escaped_sel = selector.replace('\\', "\\\\").replace('\'', "\\'");
-        let escaped_text = text.replace('\\', "\\\\").replace('\'', "\\'").replace('\n', "\\n");
-        let result = self.evaluate(&format!(
-            r#"
+        let escaped_text = text
+            .replace('\\', "\\\\")
+            .replace('\'', "\\'")
+            .replace('\n', "\\n");
+        let result = self
+            .evaluate(&format!(
+                r#"
             (function() {{
                 const el = document.querySelector('{}');
                 if (!el) return false;
@@ -420,8 +458,10 @@ impl CdpConnection {
                 }}
                 return true;
             }})()
-            "#, escaped_sel, escaped_text, escaped_text
-        )).await?;
+            "#,
+                escaped_sel, escaped_text, escaped_text
+            ))
+            .await?;
 
         if result.as_bool() != Some(true) {
             return Err(anyhow!("No element matches selector \"{}\"", selector));
@@ -431,7 +471,10 @@ impl CdpConnection {
 
     /// Type text into currently focused element using JavaScript
     pub async fn type_focused(&self, text: &str) -> Result<()> {
-        let escaped = text.replace('\\', "\\\\").replace('\'', "\\'").replace('\n', "\\n");
+        let escaped = text
+            .replace('\\', "\\\\")
+            .replace('\'', "\\'")
+            .replace('\n', "\\n");
         self.evaluate(&format!(
             r#"
             (function() {{
@@ -463,16 +506,19 @@ impl CdpConnection {
                 }});
                 el.dispatchEvent(event);
             }})()
-            "#, key
-        )).await?;
+            "#,
+            key
+        ))
+        .await?;
         Ok(())
     }
 
     /// Hover over element using JavaScript
     pub async fn hover(&self, selector: &str) -> Result<()> {
         let escaped = selector.replace('\\', "\\\\").replace('\'', "\\'");
-        let result = self.evaluate(&format!(
-            r#"
+        let result = self
+            .evaluate(&format!(
+                r#"
             (function() {{
                 const el = document.querySelector('{}');
                 if (!el) return false;
@@ -481,8 +527,10 @@ impl CdpConnection {
                 el.dispatchEvent(new MouseEvent('mouseover', {{ bubbles: true }}));
                 return true;
             }})()
-            "#, escaped
-        )).await?;
+            "#,
+                escaped
+            ))
+            .await?;
 
         if result.as_bool() != Some(true) {
             return Err(anyhow!("No element matches selector \"{}\"", selector));
@@ -492,23 +540,27 @@ impl CdpConnection {
 
     /// Scroll by pixels
     pub async fn scroll_by(&self, x: i64, y: i64) -> Result<()> {
-        self.evaluate(&format!("window.scrollBy({}, {})", x, y)).await?;
+        self.evaluate(&format!("window.scrollBy({}, {})", x, y))
+            .await?;
         Ok(())
     }
 
     /// Scroll to element using JavaScript
     pub async fn scroll_to_element(&self, selector: &str) -> Result<()> {
         let escaped = selector.replace('\\', "\\\\").replace('\'', "\\'");
-        let result = self.evaluate(&format!(
-            r#"
+        let result = self
+            .evaluate(&format!(
+                r#"
             (function() {{
                 const el = document.querySelector('{}');
                 if (!el) return false;
                 el.scrollIntoView({{ behavior: 'smooth', block: 'center' }});
                 return true;
             }})()
-            "#, escaped
-        )).await?;
+            "#,
+                escaped
+            ))
+            .await?;
 
         if result.as_bool() != Some(true) {
             return Err(anyhow!("No element matches selector \"{}\"", selector));
@@ -524,12 +576,16 @@ impl CdpConnection {
 
         loop {
             if start.elapsed() > timeout {
-                return Err(anyhow!("Timeout waiting for \"{}\" ({}ms)", selector, timeout_ms));
+                return Err(anyhow!(
+                    "Timeout waiting for \"{}\" ({}ms)",
+                    selector,
+                    timeout_ms
+                ));
             }
 
-            let result = self.evaluate(&format!(
-                "document.querySelector('{}') !== null", escaped
-            )).await?;
+            let result = self
+                .evaluate(&format!("document.querySelector('{}') !== null", escaped))
+                .await?;
 
             if result.as_bool() == Some(true) {
                 return Ok(());
@@ -548,7 +604,8 @@ impl CdpConnection {
             if start.elapsed() > timeout {
                 return Err(anyhow!(
                     "Timeout waiting for \"{}\" to disappear ({}ms)",
-                    selector, timeout_ms
+                    selector,
+                    timeout_ms
                 ));
             }
 
@@ -582,22 +639,27 @@ impl CdpConnection {
 
     /// Get cookies via JavaScript
     pub async fn get_cookies(&self) -> Result<serde_json::Value> {
-        self.evaluate(r#"
+        self.evaluate(
+            r#"
             document.cookie.split('; ').filter(c => c).map(c => {
                 const [name, ...rest] = c.split('=');
                 return { name, value: rest.join('=') };
             })
-        "#).await
+        "#,
+        )
+        .await
     }
 
     /// Get localStorage
     pub async fn get_local_storage(&self) -> Result<serde_json::Value> {
-        self.evaluate("JSON.stringify(Object.entries(localStorage))").await
+        self.evaluate("JSON.stringify(Object.entries(localStorage))")
+            .await
     }
 
     /// Get sessionStorage
     pub async fn get_session_storage(&self) -> Result<serde_json::Value> {
-        self.evaluate("JSON.stringify(Object.entries(sessionStorage))").await
+        self.evaluate("JSON.stringify(Object.entries(sessionStorage))")
+            .await
     }
 
     /// Capture console messages via CDP event listeners
@@ -613,11 +675,13 @@ impl CdpConnection {
         let mut exception_events = page.event_listener::<EventExceptionThrown>().await?;
 
         // Enable log domain - sends collected entries via entryAdded
-        page.execute(log::EnableParams::default()).await
+        page.execute(log::EnableParams::default())
+            .await
             .context("Failed to enable log domain")?;
 
         // Enable runtime for console API and exceptions
-        page.execute(runtime::EnableParams::default()).await
+        page.execute(runtime::EnableParams::default())
+            .await
             .context("Failed to enable runtime domain")?;
 
         // Collect events for the specified timeout
@@ -708,9 +772,13 @@ impl CdpConnection {
     /// Get accessibility tree via JavaScript
     /// Uses JavaScript to traverse the accessibility tree since chromiumoxide
     /// doesn't expose the Accessibility domain directly
-    pub async fn get_accessibility_tree(&self, selector: Option<&str>) -> Result<serde_json::Value> {
+    pub async fn get_accessibility_tree(
+        &self,
+        selector: Option<&str>,
+    ) -> Result<serde_json::Value> {
         let js = if let Some(sel) = selector {
-            format!(r#"
+            format!(
+                r#"
                 (function() {{
                     const root = document.querySelector('{}');
                     if (!root) return null;
@@ -813,7 +881,9 @@ impl CdpConnection {
 
                     return getAriaNode(root, 0);
                 }})()
-            "#, sel)
+            "#,
+                sel
+            )
         } else {
             r#"
                 (function() {
@@ -921,18 +991,25 @@ impl CdpConnection {
     /// Wait for text to appear on page
     pub async fn wait_for_text(&self, text: &str, timeout_ms: u64) -> Result<()> {
         let escaped_text = text.replace('\\', "\\\\").replace('\'', "\\'");
-        let js = format!(r#"
+        let js = format!(
+            r#"
             (function() {{
                 return document.body.innerText.includes('{}');
             }})()
-        "#, escaped_text);
+        "#,
+            escaped_text
+        );
 
         let timeout = Duration::from_millis(timeout_ms);
         let start = std::time::Instant::now();
 
         loop {
             if start.elapsed() > timeout {
-                return Err(anyhow!("Timeout waiting for text \"{}\" ({}ms)", text, timeout_ms));
+                return Err(anyhow!(
+                    "Timeout waiting for text \"{}\" ({}ms)",
+                    text,
+                    timeout_ms
+                ));
             }
 
             let result = self.evaluate(&js).await?;
@@ -947,18 +1024,25 @@ impl CdpConnection {
     /// Wait for text to disappear from page
     pub async fn wait_for_text_gone(&self, text: &str, timeout_ms: u64) -> Result<()> {
         let escaped_text = text.replace('\\', "\\\\").replace('\'', "\\'");
-        let js = format!(r#"
+        let js = format!(
+            r#"
             (function() {{
                 return !document.body.innerText.includes('{}');
             }})()
-        "#, escaped_text);
+        "#,
+            escaped_text
+        );
 
         let timeout = Duration::from_millis(timeout_ms);
         let start = std::time::Instant::now();
 
         loop {
             if start.elapsed() > timeout {
-                return Err(anyhow!("Timeout waiting for text \"{}\" to disappear ({}ms)", text, timeout_ms));
+                return Err(anyhow!(
+                    "Timeout waiting for text \"{}\" to disappear ({}ms)",
+                    text,
+                    timeout_ms
+                ));
             }
 
             let result = self.evaluate(&js).await?;
@@ -973,7 +1057,8 @@ impl CdpConnection {
     /// Get element center coordinates
     pub async fn get_element_center(&self, selector: &str) -> Result<(f64, f64)> {
         let escaped = selector.replace('\\', "\\\\").replace('\'', "\\'");
-        let js = format!(r#"
+        let js = format!(
+            r#"
             (function() {{
                 const el = document.querySelector('{}');
                 if (!el) return null;
@@ -983,21 +1068,30 @@ impl CdpConnection {
                     y: rect.top + rect.height / 2
                 }};
             }})()
-        "#, escaped);
+        "#,
+            escaped
+        );
 
         let result = self.evaluate(&js).await?;
         if result.is_null() {
             return Err(anyhow!("Element not found: {}", selector));
         }
 
-        let x = result.get("x").and_then(|v| v.as_f64()).ok_or_else(|| anyhow!("Invalid coordinates"))?;
-        let y = result.get("y").and_then(|v| v.as_f64()).ok_or_else(|| anyhow!("Invalid coordinates"))?;
+        let x = result
+            .get("x")
+            .and_then(|v| v.as_f64())
+            .ok_or_else(|| anyhow!("Invalid coordinates"))?;
+        let y = result
+            .get("y")
+            .and_then(|v| v.as_f64())
+            .ok_or_else(|| anyhow!("Invalid coordinates"))?;
         Ok((x, y))
     }
 
     /// Drag from one point to another
     pub async fn drag(&self, from_x: f64, from_y: f64, to_x: f64, to_y: f64) -> Result<()> {
-        let js = format!(r#"
+        let js = format!(
+            r#"
             (async function() {{
                 // Create and dispatch mouse events for drag operation
                 const fromEl = document.elementFromPoint({}, {});
@@ -1061,26 +1155,45 @@ impl CdpConnection {
 
                 return true;
             }})()
-        "#, from_x, from_y, to_x, to_y,
-            from_x, from_y,
-            to_x, to_y,
-            to_x, to_y,
-            to_x, to_y,
-            from_x, from_y,
-            to_x, to_y,
-            to_x, to_y);
+        "#,
+            from_x,
+            from_y,
+            to_x,
+            to_y,
+            from_x,
+            from_y,
+            to_x,
+            to_y,
+            to_x,
+            to_y,
+            to_x,
+            to_y,
+            from_x,
+            from_y,
+            to_x,
+            to_y,
+            to_x,
+            to_y
+        );
 
         self.evaluate(&js).await?;
         Ok(())
     }
 
     /// Select option in dropdown
-    pub async fn select_option(&self, selector: &str, value: &str, by_label: bool, by_index: bool) -> Result<()> {
+    pub async fn select_option(
+        &self,
+        selector: &str,
+        value: &str,
+        by_label: bool,
+        by_index: bool,
+    ) -> Result<()> {
         let escaped_sel = selector.replace('\\', "\\\\").replace('\'', "\\'");
         let escaped_val = value.replace('\\', "\\\\").replace('\'', "\\'");
 
         let js = if by_index {
-            format!(r#"
+            format!(
+                r#"
                 (function() {{
                     const select = document.querySelector('{}');
                     if (!select) return false;
@@ -1092,9 +1205,12 @@ impl CdpConnection {
                     }}
                     return false;
                 }})()
-            "#, escaped_sel, escaped_val)
+            "#,
+                escaped_sel, escaped_val
+            )
         } else if by_label {
-            format!(r#"
+            format!(
+                r#"
                 (function() {{
                     const select = document.querySelector('{}');
                     if (!select) return false;
@@ -1107,9 +1223,12 @@ impl CdpConnection {
                     }}
                     return false;
                 }})()
-            "#, escaped_sel, escaped_val)
+            "#,
+                escaped_sel, escaped_val
+            )
         } else {
-            format!(r#"
+            format!(
+                r#"
                 (function() {{
                     const select = document.querySelector('{}');
                     if (!select) return false;
@@ -1117,7 +1236,9 @@ impl CdpConnection {
                     select.dispatchEvent(new Event('change', {{ bubbles: true }}));
                     return true;
                 }})()
-            "#, escaped_sel, escaped_val)
+            "#,
+                escaped_sel, escaped_val
+            )
         };
 
         let result = self.evaluate(&js).await?;
@@ -1133,23 +1254,31 @@ impl CdpConnection {
         let escaped = selector.replace('\\', "\\\\").replace('\'', "\\'");
 
         // Get the file input element and verify it's a file input, then get its object ID
-        let js = format!(r#"
+        let js = format!(
+            r#"
             (function() {{
                 const el = document.querySelector('{}');
                 if (!el || el.tagName !== 'INPUT' || el.type !== 'file') return null;
                 return el;
             }})()
-        "#, escaped);
+        "#,
+            escaped
+        );
 
         // Use evaluate to get the RemoteObjectId
-        let result = page.evaluate(js).await
+        let result = page
+            .evaluate(js)
+            .await
             .context("Failed to find file input element")?;
 
-        let object_id = result.object().object_id.clone()
-            .ok_or_else(|| anyhow!("Element \"{}\" is not a file input or not found", selector))?;
+        let object_id =
+            result.object().object_id.clone().ok_or_else(|| {
+                anyhow!("Element \"{}\" is not a file input or not found", selector)
+            })?;
 
         // Convert file paths to strings
-        let file_paths: Vec<String> = files.iter()
+        let file_paths: Vec<String> = files
+            .iter()
             .map(|f| f.to_string_lossy().to_string())
             .collect();
 
@@ -1160,11 +1289,13 @@ impl CdpConnection {
             .build()
             .map_err(|e| anyhow!("Failed to build SetFileInputFiles params: {}", e))?;
 
-        page.execute(params).await
+        page.execute(params)
+            .await
             .context("Failed to set file input files")?;
 
         // Dispatch change event to notify any listeners
-        let trigger_js = format!(r#"
+        let trigger_js = format!(
+            r#"
             (function() {{
                 const input = document.querySelector('{}');
                 if (input) {{
@@ -1172,7 +1303,9 @@ impl CdpConnection {
                 }}
                 return true;
             }})()
-        "#, escaped);
+        "#,
+            escaped
+        );
 
         self.evaluate(&trigger_js).await?;
         Ok(())
@@ -1181,8 +1314,11 @@ impl CdpConnection {
     /// Handle JavaScript dialog (alert, confirm, prompt)
     pub async fn handle_dialog(&self, accept: bool, text: Option<&str>) -> Result<()> {
         // Override window methods to auto-handle dialogs
-        let text_value = text.map(|t| format!("'{}'", t.replace('\'', "\\'"))).unwrap_or_else(|| "''".to_string());
-        let js = format!(r#"
+        let text_value = text
+            .map(|t| format!("'{}'", t.replace('\'', "\\'")))
+            .unwrap_or_else(|| "''".to_string());
+        let js = format!(
+            r#"
             (function() {{
                 // Store original methods
                 window.__origAlert = window.__origAlert || window.alert;
@@ -1196,7 +1332,9 @@ impl CdpConnection {
 
                 return true;
             }})()
-        "#, accept, accept, text_value);
+        "#,
+            accept, accept, text_value
+        );
 
         self.evaluate(&js).await?;
         Ok(())
@@ -1204,14 +1342,17 @@ impl CdpConnection {
 
     /// Resize viewport
     pub async fn resize_viewport(&self, width: u32, height: u32) -> Result<()> {
-        let js = format!(r#"
+        let js = format!(
+            r#"
             (function() {{
                 // This only works for the visual viewport within the page
                 // Actual viewport resize requires CDP Emulation.setDeviceMetricsOverride
                 window.resizeTo({}, {});
                 return true;
             }})()
-        "#, width, height);
+        "#,
+            width, height
+        );
 
         self.evaluate(&js).await?;
         Ok(())
@@ -1229,8 +1370,9 @@ impl CdpConnection {
             .build();
 
         // Use page.pdf() which handles the CDP command and base64 decoding
-        let pdf_data = page.pdf(params).await
-            .context("Failed to generate PDF. Note: PDF export only works in Chrome headless mode")?;
+        let pdf_data = page.pdf(params).await.context(
+            "Failed to generate PDF. Note: PDF export only works in Chrome headless mode",
+        )?;
 
         Ok(pdf_data)
     }
@@ -1241,7 +1383,8 @@ impl CdpConnection {
 
     /// Move mouse cursor to coordinates without clicking
     pub async fn mouse_move(&self, x: f64, y: f64) -> Result<()> {
-        let js = format!(r#"
+        let js = format!(
+            r#"
             (function() {{
                 // Store cursor position for later retrieval
                 window.__domguardCursorX = {};
@@ -1260,7 +1403,9 @@ impl CdpConnection {
                 }}
                 return true;
             }})()
-        "#, x, y, x, y, x, y);
+        "#,
+            x, y, x, y, x, y
+        );
 
         self.evaluate(&js).await?;
         Ok(())
@@ -1268,14 +1413,18 @@ impl CdpConnection {
 
     /// Get current cursor position (tracked via mouse_move)
     pub async fn cursor_position(&self) -> Result<(f64, f64)> {
-        let result = self.evaluate(r#"
+        let result = self
+            .evaluate(
+                r#"
             (function() {
                 return {
                     x: window.__domguardCursorX || 0,
                     y: window.__domguardCursorY || 0
                 };
             })()
-        "#).await?;
+        "#,
+            )
+            .await?;
 
         let x = result.get("x").and_then(|v| v.as_f64()).unwrap_or(0.0);
         let y = result.get("y").and_then(|v| v.as_f64()).unwrap_or(0.0);
@@ -1287,7 +1436,8 @@ impl CdpConnection {
         let escaped_key = key.replace('\\', "\\\\").replace('\'', "\\'");
 
         // Key down
-        self.evaluate(&format!(r#"
+        self.evaluate(&format!(
+            r#"
             (function() {{
                 const el = document.activeElement || document.body;
                 el.dispatchEvent(new KeyboardEvent('keydown', {{
@@ -1297,13 +1447,17 @@ impl CdpConnection {
                     repeat: false
                 }}));
             }})()
-        "#, escaped_key)).await?;
+        "#,
+            escaped_key
+        ))
+        .await?;
 
         // Hold for duration
         tokio::time::sleep(std::time::Duration::from_millis(duration_ms)).await;
 
         // Key up
-        self.evaluate(&format!(r#"
+        self.evaluate(&format!(
+            r#"
             (function() {{
                 const el = document.activeElement || document.body;
                 el.dispatchEvent(new KeyboardEvent('keyup', {{
@@ -1312,7 +1466,10 @@ impl CdpConnection {
                     cancelable: true
                 }}));
             }})()
-        "#, escaped_key)).await?;
+        "#,
+            escaped_key
+        ))
+        .await?;
 
         Ok(())
     }
@@ -1320,7 +1477,9 @@ impl CdpConnection {
     /// Triple-click element by selector (select paragraph/block)
     pub async fn triple_click(&self, selector: &str) -> Result<()> {
         let escaped = selector.replace('\\', "\\\\").replace('\'', "\\'");
-        let result = self.evaluate(&format!(r#"
+        let result = self
+            .evaluate(&format!(
+                r#"
             (function() {{
                 const el = document.querySelector('{}');
                 if (!el) return false;
@@ -1351,7 +1510,10 @@ impl CdpConnection {
 
                 return true;
             }})()
-        "#, escaped)).await?;
+        "#,
+                escaped
+            ))
+            .await?;
 
         if result.as_bool() != Some(true) {
             return Err(anyhow!("No element matches selector \"{}\"", selector));
@@ -1361,7 +1523,8 @@ impl CdpConnection {
 
     /// Triple-click at coordinates
     pub async fn triple_click_at(&self, x: f64, y: f64) -> Result<()> {
-        self.evaluate(&format!(r#"
+        self.evaluate(&format!(
+            r#"
             (function() {{
                 const el = document.elementFromPoint({}, {});
                 if (!el) return false;
@@ -1387,7 +1550,10 @@ impl CdpConnection {
 
                 return true;
             }})()
-        "#, x, y, x, y)).await?;
+        "#,
+            x, y, x, y
+        ))
+        .await?;
 
         Ok(())
     }
@@ -1402,7 +1568,8 @@ impl CdpConnection {
         };
 
         let (x, y) = self.cursor_position().await?;
-        self.evaluate(&format!(r#"
+        self.evaluate(&format!(
+            r#"
             (function() {{
                 const el = document.elementFromPoint({}, {}) || document.body;
                 el.dispatchEvent(new MouseEvent('mousedown', {{
@@ -1416,7 +1583,15 @@ impl CdpConnection {
                 }}));
                 return true;
             }})()
-        "#, x, y, x, y, button_num, 1 << button_num)).await?;
+        "#,
+            x,
+            y,
+            x,
+            y,
+            button_num,
+            1 << button_num
+        ))
+        .await?;
 
         Ok(())
     }
@@ -1431,7 +1606,8 @@ impl CdpConnection {
         };
 
         let (x, y) = self.cursor_position().await?;
-        self.evaluate(&format!(r#"
+        self.evaluate(&format!(
+            r#"
             (function() {{
                 const el = document.elementFromPoint({}, {}) || document.body;
                 el.dispatchEvent(new MouseEvent('mouseup', {{
@@ -1444,13 +1620,22 @@ impl CdpConnection {
                 }}));
                 return true;
             }})()
-        "#, x, y, x, y, button_num)).await?;
+        "#,
+            x, y, x, y, button_num
+        ))
+        .await?;
 
         Ok(())
     }
 
     /// Capture screenshot of specific region using CDP clip parameter
-    pub async fn screenshot_region(&self, x: i32, y: i32, width: i32, height: i32) -> Result<Vec<u8>> {
+    pub async fn screenshot_region(
+        &self,
+        x: i32,
+        y: i32,
+        width: i32,
+        height: i32,
+    ) -> Result<Vec<u8>> {
         let page = self.get_page().await?;
 
         // Use CDP with clip viewport
@@ -1464,11 +1649,11 @@ impl CdpConnection {
             scale: 1.0,
         };
 
-        let params = CaptureScreenshotParams::builder()
-            .clip(clip)
-            .build();
+        let params = CaptureScreenshotParams::builder().clip(clip).build();
 
-        let data = page.execute(params).await
+        let data = page
+            .execute(params)
+            .await
             .context("Failed to capture screenshot region")?;
 
         base64::engine::general_purpose::STANDARD
@@ -1487,22 +1672,31 @@ impl CdpConnection {
         let page = self.get_page().await?;
 
         // Enable performance domain
-        page.execute(EnableParams::default()).await
+        page.execute(EnableParams::default())
+            .await
             .context("Failed to enable Performance domain")?;
 
         // Get CDP metrics
-        let cdp_result = page.execute(GetMetricsParams {}).await
+        let cdp_result = page
+            .execute(GetMetricsParams {})
+            .await
             .context("Failed to get performance metrics")?;
 
-        let cdp_metrics: Vec<serde_json::Value> = cdp_result.metrics.iter()
-            .map(|m| serde_json::json!({
-                "name": m.name,
-                "value": m.value
-            }))
+        let cdp_metrics: Vec<serde_json::Value> = cdp_result
+            .metrics
+            .iter()
+            .map(|m| {
+                serde_json::json!({
+                    "name": m.name,
+                    "value": m.value
+                })
+            })
             .collect();
 
         // Get Web Vitals from JavaScript
-        let web_vitals = self.evaluate(r#"
+        let web_vitals = self
+            .evaluate(
+                r#"
             (function() {
                 const nav = performance.getEntriesByType('navigation')[0] || {};
                 const paint = performance.getEntriesByType('paint');
@@ -1518,7 +1712,10 @@ impl CdpConnection {
                     cls: window.__domguardCLS || null
                 };
             })()
-        "#).await.unwrap_or(serde_json::json!({}));
+        "#,
+            )
+            .await
+            .unwrap_or(serde_json::json!({}));
 
         Ok(serde_json::json!({
             "web_vitals": web_vitals,
@@ -1528,13 +1725,18 @@ impl CdpConnection {
 
     /// Get full DOM snapshot as HTML string
     pub async fn get_full_dom_snapshot(&self) -> Result<String> {
-        let result = self.evaluate(r#"
+        let result = self
+            .evaluate(
+                r#"
             (function() {
                 return document.documentElement.outerHTML;
             })()
-        "#).await?;
+        "#,
+            )
+            .await?;
 
-        result.as_str()
+        result
+            .as_str()
             .map(|s| s.to_string())
             .ok_or_else(|| anyhow!("Failed to get DOM snapshot"))
     }
@@ -1549,7 +1751,8 @@ impl CdpConnection {
             .build()
             .map_err(|e| anyhow!("Failed to build CPU throttling params: {}", e))?;
 
-        page.execute(params).await
+        page.execute(params)
+            .await
             .context("Failed to set CPU throttling")?;
 
         Ok(())
@@ -1584,7 +1787,8 @@ impl CdpConnection {
             .build()
             .map_err(|e| anyhow!("Failed to build network throttling params: {}", e))?;
 
-        page.execute(params).await
+        page.execute(params)
+            .await
             .context("Failed to set network throttling")?;
 
         Ok(())
@@ -1604,7 +1808,8 @@ impl CdpConnection {
             .build()
             .map_err(|e| anyhow!("Failed to build network params: {}", e))?;
 
-        page.execute(params).await
+        page.execute(params)
+            .await
             .context("Failed to disable network throttling")?;
 
         Ok(())
@@ -1614,7 +1819,8 @@ impl CdpConnection {
     pub async fn get_network_details(&self, filter: Option<&str>) -> Result<serde_json::Value> {
         let filter_str = filter.map(|f| f.replace('\'', "\\'")).unwrap_or_default();
 
-        let js = format!(r#"
+        let js = format!(
+            r#"
             (function() {{
                 const entries = performance.getEntriesByType('resource');
                 const filter = '{}';
@@ -1646,7 +1852,9 @@ impl CdpConnection {
                         }};
                     }});
             }})()
-        "#, filter_str);
+        "#,
+            filter_str
+        );
 
         self.evaluate(&js).await
     }
@@ -1654,7 +1862,12 @@ impl CdpConnection {
 
 impl CdpConnection {
     /// Highlight an element on the page with a colored overlay
-    pub async fn highlight_element(&self, selector: &str, color: &str, duration_ms: u64) -> Result<()> {
+    pub async fn highlight_element(
+        &self,
+        selector: &str,
+        color: &str,
+        duration_ms: u64,
+    ) -> Result<()> {
         // Parse color or use default
         let (r, g, b, a) = parse_color(color).unwrap_or((255, 0, 0, 128));
 
@@ -1698,9 +1911,16 @@ impl CdpConnection {
             }})()
             "#,
             selector.replace('\'', "\\'"),
-            r, g, b, a as f64 / 255.0,
-            r, g, b,
-            r, g, b,
+            r,
+            g,
+            b,
+            a as f64 / 255.0,
+            r,
+            g,
+            b,
+            r,
+            g,
+            b,
             selector.replace('\'', "\\'")
         );
 
@@ -1738,7 +1958,11 @@ impl CdpConnection {
     }
 
     /// Highlight multiple elements with labels
-    pub async fn highlight_elements(&self, selector: &str, color: &str) -> Result<serde_json::Value> {
+    pub async fn highlight_elements(
+        &self,
+        selector: &str,
+        color: &str,
+    ) -> Result<serde_json::Value> {
         let (r, g, b, a) = parse_color(color).unwrap_or((255, 0, 0, 128));
 
         let highlight_js = format!(
@@ -1804,9 +2028,16 @@ impl CdpConnection {
             }})()
             "#,
             selector.replace('\'', "\\'"),
-            r, g, b, a as f64 / 255.0,
-            r, g, b,
-            r, g, b
+            r,
+            g,
+            b,
+            a as f64 / 255.0,
+            r,
+            g,
+            b,
+            r,
+            g,
+            b
         );
 
         let result = self.evaluate(&highlight_js).await?;

@@ -76,7 +76,10 @@ impl Formatter {
     pub fn output<T: Serialize + std::fmt::Display>(&self, result: &CommandResult<T>) {
         match self.format {
             OutputFormat::Json => {
-                println!("{}", serde_json::to_string_pretty(result).unwrap_or_default());
+                println!(
+                    "{}",
+                    serde_json::to_string_pretty(result).unwrap_or_default()
+                );
             }
             OutputFormat::Human => {
                 if result.success {
@@ -146,7 +149,10 @@ impl Formatter {
         match self.format {
             OutputFormat::Json => {
                 let result: CommandResult<()> = CommandResult::error(msg);
-                println!("{}", serde_json::to_string_pretty(&result).unwrap_or_default());
+                println!(
+                    "{}",
+                    serde_json::to_string_pretty(&result).unwrap_or_default()
+                );
             }
             OutputFormat::Human => {
                 eprintln!("{} {}", "Error:".red().bold(), msg);
@@ -264,15 +270,18 @@ pub struct NetworkRequest {
 
 impl std::fmt::Display for NetworkRequest {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        let status_str = self.status.map(|s| {
-            if (200..300).contains(&s) {
-                s.to_string().green().to_string()
-            } else if s >= 400 {
-                s.to_string().red().to_string()
-            } else {
-                s.to_string().yellow().to_string()
-            }
-        }).unwrap_or_else(|| "...".dimmed().to_string());
+        let status_str = self
+            .status
+            .map(|s| {
+                if (200..300).contains(&s) {
+                    s.to_string().green().to_string()
+                } else if s >= 400 {
+                    s.to_string().red().to_string()
+                } else {
+                    s.to_string().yellow().to_string()
+                }
+            })
+            .unwrap_or_else(|| "...".dimmed().to_string());
 
         write!(f, "{} {} [{}]", self.method.cyan(), self.url, status_str)?;
 
@@ -361,9 +370,11 @@ impl std::fmt::Display for DesignInspiration {
 
         writeln!(f, "\n{}", "Typography:".bold())?;
         for typo in &self.typography {
-            writeln!(f, "  {} {}px/{} {} - {}",
-                typo.font_family, typo.font_size, typo.line_height,
-                typo.font_weight, typo.usage)?;
+            writeln!(
+                f,
+                "  {} {}px/{} {} - {}",
+                typo.font_family, typo.font_size, typo.line_height, typo.font_weight, typo.usage
+            )?;
         }
 
         writeln!(f, "\n{}", "Spacing:".bold())?;
@@ -375,13 +386,25 @@ impl std::fmt::Display for DesignInspiration {
         writeln!(f, "  Flex containers: {}", self.layout.flex_containers)?;
         writeln!(f, "  Grid containers: {}", self.layout.grid_containers)?;
         if !self.layout.flex_directions.is_empty() {
-            writeln!(f, "  Flex directions: {}", self.layout.flex_directions.join(", "))?;
+            writeln!(
+                f,
+                "  Flex directions: {}",
+                self.layout.flex_directions.join(", ")
+            )?;
         }
         if !self.layout.grid_templates.is_empty() {
-            writeln!(f, "  Grid templates: {}", self.layout.grid_templates.join(", "))?;
+            writeln!(
+                f,
+                "  Grid templates: {}",
+                self.layout.grid_templates.join(", ")
+            )?;
         }
         if !self.layout.justify_content.is_empty() {
-            writeln!(f, "  Justify content: {}", self.layout.justify_content.join(", "))?;
+            writeln!(
+                f,
+                "  Justify content: {}",
+                self.layout.justify_content.join(", ")
+            )?;
         }
         if !self.layout.align_items.is_empty() {
             writeln!(f, "  Align items: {}", self.layout.align_items.join(", "))?;
@@ -389,13 +412,21 @@ impl std::fmt::Display for DesignInspiration {
 
         writeln!(f, "\n{}", "Animations:".bold())?;
         if !self.animations.timing_functions.is_empty() {
-            writeln!(f, "  Timing: {}", self.animations.timing_functions.join(", "))?;
+            writeln!(
+                f,
+                "  Timing: {}",
+                self.animations.timing_functions.join(", ")
+            )?;
         }
         if !self.animations.durations.is_empty() {
             writeln!(f, "  Durations: {}", self.animations.durations.join(", "))?;
         }
         if !self.animations.transitions.is_empty() {
-            writeln!(f, "  Transitions: {}", self.animations.transitions.join(", "))?;
+            writeln!(
+                f,
+                "  Transitions: {}",
+                self.animations.transitions.join(", ")
+            )?;
         }
 
         if let Some(path) = &self.screenshot_path {

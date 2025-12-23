@@ -110,14 +110,15 @@ impl BlockedSitesConfig {
 
         if self.default_block {
             // Block by default, check if in allowed list
-            !self.allowed.iter().any(|pattern| {
-                url_lower.contains(&pattern.to_lowercase())
-            })
+            !self
+                .allowed
+                .iter()
+                .any(|pattern| url_lower.contains(&pattern.to_lowercase()))
         } else {
             // Allow by default, check if in blocked list
-            self.blocked.iter().any(|pattern| {
-                url_lower.contains(&pattern.to_lowercase())
-            })
+            self.blocked
+                .iter()
+                .any(|pattern| url_lower.contains(&pattern.to_lowercase()))
         }
     }
 
@@ -238,12 +239,17 @@ impl SecurityChecker {
         ];
 
         for (pattern, description) in form_submit_patterns {
-            if selector_lower.contains(pattern) &&
-               (selector_lower.contains("submit") ||
-                selector_lower.contains("button") ||
-                selector_lower.contains("btn")) {
-                let severity = if pattern.contains("delete") || pattern.contains("remove") ||
-                                  pattern.contains("payment") || pattern.contains("checkout") || pattern.contains("transfer") {
+            if selector_lower.contains(pattern)
+                && (selector_lower.contains("submit")
+                    || selector_lower.contains("button")
+                    || selector_lower.contains("btn"))
+            {
+                let severity = if pattern.contains("delete")
+                    || pattern.contains("remove")
+                    || pattern.contains("payment")
+                    || pattern.contains("checkout")
+                    || pattern.contains("transfer")
+                {
                     Severity::Critical
                 } else {
                     Severity::Medium
@@ -283,10 +289,28 @@ impl SecurityChecker {
 
         // Check for financial sites
         let financial_patterns = [
-            "bank", "paypal", "venmo", "chase", "wellsfargo", "bankofamerica",
-            "citibank", "capitalone", "usbank", "pnc", "td.com", "schwab",
-            "fidelity", "vanguard", "robinhood", "coinbase", "binance",
-            "crypto.com", "kraken", "trading", "broker", "invest",
+            "bank",
+            "paypal",
+            "venmo",
+            "chase",
+            "wellsfargo",
+            "bankofamerica",
+            "citibank",
+            "capitalone",
+            "usbank",
+            "pnc",
+            "td.com",
+            "schwab",
+            "fidelity",
+            "vanguard",
+            "robinhood",
+            "coinbase",
+            "binance",
+            "crypto.com",
+            "kraken",
+            "trading",
+            "broker",
+            "invest",
         ];
 
         let url_lower = url.to_lowercase();
@@ -304,8 +328,15 @@ impl SecurityChecker {
 
         // Check for personal data sites
         let personal_data_patterns = [
-            "healthcare", "medical", "health.gov", "irs.gov", "ssa.gov",
-            "social-security", "medicare", "medicaid", "insurance",
+            "healthcare",
+            "medical",
+            "health.gov",
+            "irs.gov",
+            "ssa.gov",
+            "social-security",
+            "medicare",
+            "medicaid",
+            "insurance",
         ];
 
         for pattern in personal_data_patterns {
@@ -327,8 +358,7 @@ impl SecurityChecker {
     pub fn check_upload(&self, files: &[PathBuf]) -> SensitiveActionDetection {
         // Check file extensions for sensitive documents
         let sensitive_extensions = [
-            "pdf", "doc", "docx", "xls", "xlsx", "csv",
-            "txt", "key", "pem", "crt", "p12", "pfx",
+            "pdf", "doc", "docx", "xls", "xlsx", "csv", "txt", "key", "pem", "crt", "p12", "pfx",
             "env", "conf", "config", "ini", "json", "yaml", "yml",
         ];
 
@@ -339,7 +369,10 @@ impl SecurityChecker {
                     return SensitiveActionDetection {
                         detected: true,
                         action_type: Some(SensitiveActionType::FileUpload),
-                        reason: Some(format!("Uploading potentially sensitive file: {}", file.display())),
+                        reason: Some(format!(
+                            "Uploading potentially sensitive file: {}",
+                            file.display()
+                        )),
                         severity: Severity::Medium,
                         element_info: None,
                     };
@@ -347,13 +380,24 @@ impl SecurityChecker {
             }
 
             // Check filename for sensitive patterns
-            let filename = file.file_name()
+            let filename = file
+                .file_name()
                 .map(|n| n.to_string_lossy().to_lowercase())
                 .unwrap_or_default();
 
             let sensitive_filenames = [
-                "passport", "license", "ssn", "tax", "w2", "1099",
-                "bank", "statement", "credential", "secret", "key", "password",
+                "passport",
+                "license",
+                "ssn",
+                "tax",
+                "w2",
+                "1099",
+                "bank",
+                "statement",
+                "credential",
+                "secret",
+                "key",
+                "password",
             ];
 
             for pattern in sensitive_filenames {
@@ -361,7 +405,10 @@ impl SecurityChecker {
                     return SensitiveActionDetection {
                         detected: true,
                         action_type: Some(SensitiveActionType::FileUpload),
-                        reason: Some(format!("Uploading potentially sensitive file: {}", file.display())),
+                        reason: Some(format!(
+                            "Uploading potentially sensitive file: {}",
+                            file.display()
+                        )),
                         severity: Severity::High,
                         element_info: None,
                     };
@@ -386,9 +433,13 @@ pub fn format_security_warning(detection: &SensitiveActionDetection) -> String {
         Severity::Critical => "🚨",
     };
 
-    let mut warning = format!("{} SECURITY WARNING: {}\n",
+    let mut warning = format!(
+        "{} SECURITY WARNING: {}\n",
         severity_icon,
-        detection.reason.as_deref().unwrap_or("Sensitive action detected")
+        detection
+            .reason
+            .as_deref()
+            .unwrap_or("Sensitive action detected")
     );
 
     if let Some(action_type) = &detection.action_type {
@@ -421,7 +472,10 @@ mod tests {
         let checker = SecurityChecker::new(BlockedSitesConfig::default());
         let result = checker.check_type_action("#credit-card-number", "1234");
         assert!(result.detected);
-        assert_eq!(result.action_type, Some(SensitiveActionType::SensitiveFieldInput));
+        assert_eq!(
+            result.action_type,
+            Some(SensitiveActionType::SensitiveFieldInput)
+        );
     }
 
     #[test]

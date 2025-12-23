@@ -146,39 +146,70 @@ pub async fn run_interact(
         InteractCommand::Click { selector, coords } => {
             interact_click(cdp, selector.as_deref(), coords, formatter).await
         }
-        InteractCommand::Type { selector, text, focused } => {
-            interact_type(cdp, selector.as_deref(), &text, focused, formatter).await
+        InteractCommand::Type {
+            selector,
+            text,
+            focused,
+        } => interact_type(cdp, selector.as_deref(), &text, focused, formatter).await,
+        InteractCommand::Key { keys } => interact_key(cdp, &keys, formatter).await,
+        InteractCommand::Hover { selector } => interact_hover(cdp, &selector, formatter).await,
+        InteractCommand::Scroll {
+            down,
+            up,
+            left,
+            right,
+            to,
+        } => interact_scroll(cdp, down, up, left, right, to.as_deref(), formatter).await,
+        InteractCommand::Screenshot {
+            full,
+            element,
+            output,
+        } => interact_screenshot(cdp, config, full, element.as_deref(), output, formatter).await,
+        InteractCommand::Navigate { url } => interact_navigate(cdp, &url, formatter).await,
+        InteractCommand::Back => interact_back(cdp, formatter).await,
+        InteractCommand::Refresh => interact_refresh(cdp, formatter).await,
+        InteractCommand::Wait {
+            selector,
+            visible,
+            gone,
+            timeout_ms,
+            text,
+            text_gone,
+        } => {
+            interact_wait(
+                cdp,
+                &selector,
+                visible,
+                gone,
+                timeout_ms,
+                text.as_deref(),
+                text_gone.as_deref(),
+                formatter,
+            )
+            .await
         }
-        InteractCommand::Key { keys } => {
-            interact_key(cdp, &keys, formatter).await
+        InteractCommand::Drag {
+            from_selector,
+            to_selector,
+            from_coords,
+            to_coords,
+        } => {
+            interact_drag(
+                cdp,
+                from_selector.as_deref(),
+                to_selector.as_deref(),
+                from_coords,
+                to_coords,
+                formatter,
+            )
+            .await
         }
-        InteractCommand::Hover { selector } => {
-            interact_hover(cdp, &selector, formatter).await
-        }
-        InteractCommand::Scroll { down, up, left, right, to } => {
-            interact_scroll(cdp, down, up, left, right, to.as_deref(), formatter).await
-        }
-        InteractCommand::Screenshot { full, element, output } => {
-            interact_screenshot(cdp, config, full, element.as_deref(), output, formatter).await
-        }
-        InteractCommand::Navigate { url } => {
-            interact_navigate(cdp, &url, formatter).await
-        }
-        InteractCommand::Back => {
-            interact_back(cdp, formatter).await
-        }
-        InteractCommand::Refresh => {
-            interact_refresh(cdp, formatter).await
-        }
-        InteractCommand::Wait { selector, visible, gone, timeout_ms, text, text_gone } => {
-            interact_wait(cdp, &selector, visible, gone, timeout_ms, text.as_deref(), text_gone.as_deref(), formatter).await
-        }
-        InteractCommand::Drag { from_selector, to_selector, from_coords, to_coords } => {
-            interact_drag(cdp, from_selector.as_deref(), to_selector.as_deref(), from_coords, to_coords, formatter).await
-        }
-        InteractCommand::Select { selector, value, by_label, by_index } => {
-            interact_select(cdp, &selector, &value, by_label, by_index, formatter).await
-        }
+        InteractCommand::Select {
+            selector,
+            value,
+            by_label,
+            by_index,
+        } => interact_select(cdp, &selector, &value, by_label, by_index, formatter).await,
         InteractCommand::Upload { selector, files } => {
             interact_upload(cdp, &selector, &files, formatter).await
         }
@@ -192,24 +223,16 @@ pub async fn run_interact(
             interact_pdf(cdp, config, output, landscape, formatter).await
         }
         // Anthropic Computer Use features
-        InteractCommand::MouseMove { coords } => {
-            interact_mouse_move(cdp, coords, formatter).await
-        }
-        InteractCommand::CursorPosition => {
-            interact_cursor_position(cdp, formatter).await
-        }
+        InteractCommand::MouseMove { coords } => interact_mouse_move(cdp, coords, formatter).await,
+        InteractCommand::CursorPosition => interact_cursor_position(cdp, formatter).await,
         InteractCommand::HoldKey { key, duration_ms } => {
             interact_hold_key(cdp, &key, duration_ms, formatter).await
         }
         InteractCommand::TripleClick { selector, coords } => {
             interact_triple_click(cdp, selector.as_deref(), coords, formatter).await
         }
-        InteractCommand::MouseDown { button } => {
-            interact_mouse_down(cdp, &button, formatter).await
-        }
-        InteractCommand::MouseUp { button } => {
-            interact_mouse_up(cdp, &button, formatter).await
-        }
+        InteractCommand::MouseDown { button } => interact_mouse_down(cdp, &button, formatter).await,
+        InteractCommand::MouseUp { button } => interact_mouse_up(cdp, &button, formatter).await,
         InteractCommand::ScreenshotRegion { region, output } => {
             interact_screenshot_region(cdp, config, region, output, formatter).await
         }
@@ -376,7 +399,8 @@ async fn interact_screenshot(
 ) -> Result<InteractResult> {
     let data = if let Some(sel) = element {
         // Element screenshot via JS
-        let js = format!(r#"
+        let js = format!(
+            r#"
             (async function() {{
                 const el = document.querySelector('{}');
                 if (!el) return null;
@@ -385,7 +409,9 @@ async fn interact_screenshot(
                 const rect = el.getBoundingClientRect();
                 return {{ x: rect.x, y: rect.y, width: rect.width, height: rect.height }};
             }})()
-        "#, sel);
+        "#,
+            sel
+        );
 
         let rect = cdp.evaluate(&js).await?;
         if rect.is_null() {
@@ -403,7 +429,8 @@ async fn interact_screenshot(
         Config::find_domguard_dir()
             .unwrap_or_else(|| std::env::current_dir().unwrap_or_default())
             .join("screenshots")
-            .join(format!("screenshot_{}.png",
+            .join(format!(
+                "screenshot_{}.png",
                 std::time::SystemTime::now()
                     .duration_since(std::time::UNIX_EPOCH)
                     .unwrap()
@@ -448,10 +475,7 @@ async fn interact_navigate(
 }
 
 /// Go back in history
-async fn interact_back(
-    cdp: &CdpConnection,
-    formatter: &Formatter,
-) -> Result<InteractResult> {
+async fn interact_back(cdp: &CdpConnection, formatter: &Formatter) -> Result<InteractResult> {
     cdp.go_back().await?;
     tokio::time::sleep(std::time::Duration::from_millis(300)).await;
     formatter.success("Navigated back");
@@ -463,10 +487,7 @@ async fn interact_back(
 }
 
 /// Refresh page
-async fn interact_refresh(
-    cdp: &CdpConnection,
-    formatter: &Formatter,
-) -> Result<InteractResult> {
+async fn interact_refresh(cdp: &CdpConnection, formatter: &Formatter) -> Result<InteractResult> {
     cdp.refresh().await?;
     formatter.success("Page refreshed");
     Ok(InteractResult {
@@ -543,7 +564,9 @@ async fn interact_drag(
     } else if let Some(sel) = from_selector {
         cdp.get_element_center(sel).await?
     } else {
-        return Err(anyhow::anyhow!("Either from_selector or from_coords required"));
+        return Err(anyhow::anyhow!(
+            "Either from_selector or from_coords required"
+        ));
     };
 
     let (to_x, to_y) = if let Some((x, y)) = to_coords {
@@ -556,9 +579,11 @@ async fn interact_drag(
 
     cdp.drag(from_x, from_y, to_x, to_y).await?;
 
-    let from_str = from_selector.map(|s| s.to_string())
+    let from_str = from_selector
+        .map(|s| s.to_string())
         .unwrap_or_else(|| format!("({}, {})", from_x, from_y));
-    let to_str = to_selector.map(|s| s.to_string())
+    let to_str = to_selector
+        .map(|s| s.to_string())
         .unwrap_or_else(|| format!("({}, {})", to_x, to_y));
 
     formatter.success(&format!("Dragged from {} to {}", from_str, to_str));
@@ -578,10 +603,20 @@ async fn interact_select(
     by_index: bool,
     formatter: &Formatter,
 ) -> Result<InteractResult> {
-    cdp.select_option(selector, value, by_label, by_index).await?;
+    cdp.select_option(selector, value, by_label, by_index)
+        .await?;
 
-    let method = if by_label { "label" } else if by_index { "index" } else { "value" };
-    formatter.success(&format!("Selected {} \"{}\" in \"{}\"", method, value, selector));
+    let method = if by_label {
+        "label"
+    } else if by_index {
+        "index"
+    } else {
+        "value"
+    };
+    formatter.success(&format!(
+        "Selected {} \"{}\" in \"{}\"",
+        method, value, selector
+    ));
     Ok(InteractResult {
         action: "select".to_string(),
         target: Some(selector.to_string()),
@@ -605,12 +640,17 @@ async fn interact_upload(
 
     cdp.upload_files(selector, files).await?;
 
-    let file_names: Vec<_> = files.iter()
+    let file_names: Vec<_> = files
+        .iter()
         .filter_map(|f| f.file_name())
         .map(|f| f.to_string_lossy().to_string())
         .collect();
 
-    formatter.success(&format!("Uploaded {} file(s) to \"{}\"", files.len(), selector));
+    formatter.success(&format!(
+        "Uploaded {} file(s) to \"{}\"",
+        files.len(),
+        selector
+    ));
     Ok(InteractResult {
         action: "upload".to_string(),
         target: Some(selector.to_string()),
@@ -668,7 +708,8 @@ async fn interact_pdf(
         Config::find_domguard_dir()
             .unwrap_or_else(|| std::env::current_dir().unwrap_or_default())
             .join("screenshots")
-            .join(format!("page_{}.pdf",
+            .join(format!(
+                "page_{}.pdf",
                 std::time::SystemTime::now()
                     .duration_since(std::time::UNIX_EPOCH)
                     .unwrap()
@@ -814,7 +855,8 @@ async fn interact_screenshot_region(
         Config::find_domguard_dir()
             .unwrap_or_else(|| std::env::current_dir().unwrap_or_default())
             .join("screenshots")
-            .join(format!("region_{}.png",
+            .join(format!(
+                "region_{}.png",
                 std::time::SystemTime::now()
                     .duration_since(std::time::UNIX_EPOCH)
                     .unwrap()
@@ -828,7 +870,10 @@ async fn interact_screenshot_region(
     }
 
     std::fs::write(&output_path, &data)?;
-    formatter.success(&format!("Screenshot region saved: {}", output_path.display()));
+    formatter.success(&format!(
+        "Screenshot region saved: {}",
+        output_path.display()
+    ));
 
     Ok(InteractResult {
         action: "screenshot_region".to_string(),
@@ -838,10 +883,7 @@ async fn interact_screenshot_region(
 }
 
 /// Wait for specified duration
-async fn interact_wait_duration(
-    duration_ms: u64,
-    formatter: &Formatter,
-) -> Result<InteractResult> {
+async fn interact_wait_duration(duration_ms: u64, formatter: &Formatter) -> Result<InteractResult> {
     tokio::time::sleep(std::time::Duration::from_millis(duration_ms)).await;
     formatter.success(&format!("Waited {}ms", duration_ms));
     Ok(InteractResult {

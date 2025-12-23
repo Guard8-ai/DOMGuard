@@ -93,7 +93,9 @@ pub enum RecoveryStrategy {
 impl std::fmt::Display for RecoveryStrategy {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
-            RecoveryStrategy::WaitAndRetry { delay_ms } => write!(f, "Wait {}ms and retry", delay_ms),
+            RecoveryStrategy::WaitAndRetry { delay_ms } => {
+                write!(f, "Wait {}ms and retry", delay_ms)
+            }
             RecoveryStrategy::ScrollIntoView => write!(f, "Scroll element into view"),
             RecoveryStrategy::DismissOverlay => write!(f, "Dismiss blocking overlay"),
             RecoveryStrategy::RefreshPage => write!(f, "Refresh page"),
@@ -105,7 +107,9 @@ impl std::fmt::Display for RecoveryStrategy {
             RecoveryStrategy::ScrollAndSearch => write!(f, "Scroll and search for element"),
             RecoveryStrategy::ClickViaJs => write!(f, "Click via JavaScript"),
             RecoveryStrategy::FocusThenType => write!(f, "Focus element then type"),
-            RecoveryStrategy::RequestTakeover { reason } => write!(f, "Request takeover: {}", reason),
+            RecoveryStrategy::RequestTakeover { reason } => {
+                write!(f, "Request takeover: {}", reason)
+            }
         }
     }
 }
@@ -193,18 +197,14 @@ pub fn get_recovery_strategies(error: &AutomationError, action: &str) -> Vec<Rec
             ]
         }
         AutomationError::CaptchaDetected => {
-            vec![
-                RecoveryStrategy::RequestTakeover {
-                    reason: "CAPTCHA detected".to_string(),
-                },
-            ]
+            vec![RecoveryStrategy::RequestTakeover {
+                reason: "CAPTCHA detected".to_string(),
+            }]
         }
         AutomationError::AuthRequired => {
-            vec![
-                RecoveryStrategy::RequestTakeover {
-                    reason: "Authentication required".to_string(),
-                },
-            ]
+            vec![RecoveryStrategy::RequestTakeover {
+                reason: "Authentication required".to_string(),
+            }]
         }
         AutomationError::UnexpectedDialog => {
             vec![
@@ -246,29 +246,53 @@ pub fn get_recovery_strategies(error: &AutomationError, action: &str) -> Vec<Rec
 pub fn classify_error(error_message: &str) -> AutomationError {
     let lower = error_message.to_lowercase();
 
-    if lower.contains("not found") || lower.contains("no element") || lower.contains("could not find") {
+    if lower.contains("not found")
+        || lower.contains("no element")
+        || lower.contains("could not find")
+    {
         AutomationError::ElementNotFound
-    } else if lower.contains("not visible") || lower.contains("hidden") || lower.contains("display: none") {
+    } else if lower.contains("not visible")
+        || lower.contains("hidden")
+        || lower.contains("display: none")
+    {
         AutomationError::ElementNotVisible
-    } else if lower.contains("not interactable") || lower.contains("disabled") || lower.contains("readonly") {
+    } else if lower.contains("not interactable")
+        || lower.contains("disabled")
+        || lower.contains("readonly")
+    {
         AutomationError::ElementNotInteractable
     } else if lower.contains("navigation") && lower.contains("timeout") {
         AutomationError::NavigationTimeout
     } else if lower.contains("network") || lower.contains("fetch") || lower.contains("connection") {
         AutomationError::NetworkError
-    } else if lower.contains("javascript") || lower.contains("script error") || lower.contains("uncaught") {
+    } else if lower.contains("javascript")
+        || lower.contains("script error")
+        || lower.contains("uncaught")
+    {
         AutomationError::JavaScriptError
-    } else if lower.contains("captcha") || lower.contains("recaptcha") || lower.contains("hcaptcha") {
+    } else if lower.contains("captcha") || lower.contains("recaptcha") || lower.contains("hcaptcha")
+    {
         AutomationError::CaptchaDetected
-    } else if lower.contains("login") || lower.contains("sign in") || lower.contains("authentication") {
+    } else if lower.contains("login")
+        || lower.contains("sign in")
+        || lower.contains("authentication")
+    {
         AutomationError::AuthRequired
     } else if lower.contains("dialog") || lower.contains("alert") || lower.contains("confirm") {
         AutomationError::UnexpectedDialog
-    } else if lower.contains("stale") || lower.contains("detached") || lower.contains("removed from dom") {
+    } else if lower.contains("stale")
+        || lower.contains("detached")
+        || lower.contains("removed from dom")
+    {
         AutomationError::StaleElement
-    } else if lower.contains("intercepted") || lower.contains("obscured") || lower.contains("overlay") {
+    } else if lower.contains("intercepted")
+        || lower.contains("obscured")
+        || lower.contains("overlay")
+    {
         AutomationError::ClickIntercepted
-    } else if lower.contains("unexpected") && (lower.contains("page") || lower.contains("url") || lower.contains("navigate")) {
+    } else if lower.contains("unexpected")
+        && (lower.contains("page") || lower.contains("url") || lower.contains("navigate"))
+    {
         AutomationError::UnexpectedPageChange
     } else {
         AutomationError::Unknown(error_message.to_string())
@@ -408,13 +432,19 @@ mod tests {
         let strategies = get_recovery_strategies(&AutomationError::ElementNotFound, "click");
         assert!(!strategies.is_empty());
         // First strategy should be wait and retry
-        assert!(matches!(strategies[0], RecoveryStrategy::WaitAndRetry { .. }));
+        assert!(matches!(
+            strategies[0],
+            RecoveryStrategy::WaitAndRetry { .. }
+        ));
     }
 
     #[test]
     fn test_get_recovery_strategies_captcha() {
         let strategies = get_recovery_strategies(&AutomationError::CaptchaDetected, "click");
         assert_eq!(strategies.len(), 1);
-        assert!(matches!(strategies[0], RecoveryStrategy::RequestTakeover { .. }));
+        assert!(matches!(
+            strategies[0],
+            RecoveryStrategy::RequestTakeover { .. }
+        ));
     }
 }

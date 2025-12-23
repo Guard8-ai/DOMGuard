@@ -137,10 +137,11 @@ impl Config {
         let config_path = Self::config_path();
 
         if config_path.exists() {
-            let content = std::fs::read_to_string(&config_path)
-                .with_context(|| format!("Failed to read config file: {}", config_path.display()))?;
-            let config: Config = toml::from_str(&content)
-                .with_context(|| "Failed to parse config file")?;
+            let content = std::fs::read_to_string(&config_path).with_context(|| {
+                format!("Failed to read config file: {}", config_path.display())
+            })?;
+            let config: Config =
+                toml::from_str(&content).with_context(|| "Failed to parse config file")?;
             Ok(config)
         } else {
             Ok(Config::default())
@@ -152,12 +153,12 @@ impl Config {
         let config_path = Self::config_path();
 
         if let Some(parent) = config_path.parent() {
-            std::fs::create_dir_all(parent)
-                .with_context(|| format!("Failed to create config directory: {}", parent.display()))?;
+            std::fs::create_dir_all(parent).with_context(|| {
+                format!("Failed to create config directory: {}", parent.display())
+            })?;
         }
 
-        let content = toml::to_string_pretty(self)
-            .with_context(|| "Failed to serialize config")?;
+        let content = toml::to_string_pretty(self).with_context(|| "Failed to serialize config")?;
         std::fs::write(&config_path, content)
             .with_context(|| format!("Failed to write config file: {}", config_path.display()))?;
 
@@ -171,10 +172,7 @@ impl Config {
 
     /// Check if host is localhost (security check)
     pub fn is_localhost(&self) -> bool {
-        matches!(
-            self.chrome.host.as_str(),
-            "127.0.0.1" | "localhost" | "::1"
-        )
+        matches!(self.chrome.host.as_str(), "127.0.0.1" | "localhost" | "::1")
     }
 
     /// Check if DOMGuard is initialized in current directory tree
@@ -214,8 +212,7 @@ pub fn init_domguard() -> Result<InitResult> {
         .unwrap_or_else(|_| PathBuf::from("."))
         .join("AGENTIC_AI_DOMGUARD_GUIDE.md");
 
-    std::fs::write(&guide_path, AI_GUIDE_CONTENT)
-        .with_context(|| "Failed to write AI guide")?;
+    std::fs::write(&guide_path, AI_GUIDE_CONTENT).with_context(|| "Failed to write AI guide")?;
 
     Ok(InitResult {
         already_exists: false,

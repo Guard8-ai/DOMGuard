@@ -902,13 +902,21 @@ fn parse_region(s: &str) -> Result<(i32, i32, i32, i32), String> {
     if parts.len() != 4 {
         return Err("Region must be in format: x,y,width,height".to_string());
     }
-    let x = parts[0].trim().parse::<i32>()
+    let x = parts[0]
+        .trim()
+        .parse::<i32>()
         .map_err(|_| "Invalid x coordinate")?;
-    let y = parts[1].trim().parse::<i32>()
+    let y = parts[1]
+        .trim()
+        .parse::<i32>()
         .map_err(|_| "Invalid y coordinate")?;
-    let width = parts[2].trim().parse::<i32>()
+    let width = parts[2]
+        .trim()
+        .parse::<i32>()
         .map_err(|_| "Invalid width")?;
-    let height = parts[3].trim().parse::<i32>()
+    let height = parts[3]
+        .trim()
+        .parse::<i32>()
         .map_err(|_| "Invalid height")?;
     Ok((x, y, width, height))
 }
@@ -918,9 +926,13 @@ fn parse_coords(s: &str) -> Result<(f64, f64), String> {
     if parts.len() != 2 {
         return Err("Coordinates must be in format: x,y".to_string());
     }
-    let x = parts[0].trim().parse::<f64>()
+    let x = parts[0]
+        .trim()
+        .parse::<f64>()
         .map_err(|_| "Invalid x coordinate")?;
-    let y = parts[1].trim().parse::<f64>()
+    let y = parts[1]
+        .trim()
+        .parse::<f64>()
         .map_err(|_| "Invalid y coordinate")?;
     Ok((x, y))
 }
@@ -970,36 +982,47 @@ async fn run_command(cli: Cli, formatter: &Formatter) -> Result<()> {
     let mut cdp = CdpConnection::new(config.clone());
 
     match &cli.command {
-        Commands::Status => {
-            handle_status(&mut cdp, formatter).await
-        }
-        Commands::Inspire { url, component, save } => {
+        Commands::Status => handle_status(&mut cdp, formatter).await,
+        Commands::Inspire {
+            url,
+            component,
+            save,
+        } => {
             cdp.connect().await?;
-            inspire::run_inspire(&cdp, &config, url, component.as_deref(), save.as_deref(), formatter).await
+            inspire::run_inspire(
+                &cdp,
+                &config,
+                url,
+                component.as_deref(),
+                save.as_deref(),
+                formatter,
+            )
+            .await
         }
         Commands::Debug { command } => {
             cdp.connect().await?;
             let cmd = match command {
-                DebugSubcommand::Dom { selector } => {
-                    DebugCommand::Dom { selector: selector.clone() }
-                }
-                DebugSubcommand::Styles { selector } => {
-                    DebugCommand::Styles { selector: selector.clone() }
-                }
-                DebugSubcommand::Console { follow, filter } => {
-                    DebugCommand::Console { follow: *follow, filter: filter.clone() }
-                }
-                DebugSubcommand::Network { filter } => {
-                    DebugCommand::Network { filter: filter.clone() }
-                }
-                DebugSubcommand::Eval { expression } => {
-                    DebugCommand::Eval { expression: expression.clone() }
-                }
+                DebugSubcommand::Dom { selector } => DebugCommand::Dom {
+                    selector: selector.clone(),
+                },
+                DebugSubcommand::Styles { selector } => DebugCommand::Styles {
+                    selector: selector.clone(),
+                },
+                DebugSubcommand::Console { follow, filter } => DebugCommand::Console {
+                    follow: *follow,
+                    filter: filter.clone(),
+                },
+                DebugSubcommand::Network { filter } => DebugCommand::Network {
+                    filter: filter.clone(),
+                },
+                DebugSubcommand::Eval { expression } => DebugCommand::Eval {
+                    expression: expression.clone(),
+                },
                 DebugSubcommand::Storage => DebugCommand::Storage,
                 DebugSubcommand::Cookies => DebugCommand::Cookies,
-                DebugSubcommand::Aria { selector } => {
-                    DebugCommand::Aria { selector: selector.clone() }
-                }
+                DebugSubcommand::Aria { selector } => DebugCommand::Aria {
+                    selector: selector.clone(),
+                },
                 DebugSubcommand::Tabs { action } => {
                     let tab_action = match action {
                         TabAction::List => debug::TabCommand::List,
@@ -1011,9 +1034,9 @@ async fn run_command(cli: Cli, formatter: &Formatter) -> Result<()> {
                 }
                 // Chrome DevTools MCP features
                 DebugSubcommand::Performance => DebugCommand::Performance,
-                DebugSubcommand::Snapshot { output } => {
-                    DebugCommand::Snapshot { output: output.clone() }
-                }
+                DebugSubcommand::Snapshot { output } => DebugCommand::Snapshot {
+                    output: output.clone(),
+                },
                 DebugSubcommand::Throttle { mode } => {
                     let throttle_mode = match mode {
                         ThrottleAction::Off => debug::ThrottleMode::Off,
@@ -1021,28 +1044,35 @@ async fn run_command(cli: Cli, formatter: &Formatter) -> Result<()> {
                         ThrottleAction::Network3g => debug::ThrottleMode::Network3g,
                         ThrottleAction::NetworkSlow3g => debug::ThrottleMode::NetworkSlow3g,
                         ThrottleAction::NetworkOffline => debug::ThrottleMode::NetworkOffline,
-                        ThrottleAction::NetworkCustom { download, upload, latency } => {
-                            debug::ThrottleMode::NetworkCustom {
-                                download_kbps: *download,
-                                upload_kbps: *upload,
-                                latency_ms: *latency,
-                            }
-                        }
+                        ThrottleAction::NetworkCustom {
+                            download,
+                            upload,
+                            latency,
+                        } => debug::ThrottleMode::NetworkCustom {
+                            download_kbps: *download,
+                            upload_kbps: *upload,
+                            latency_ms: *latency,
+                        },
                     };
-                    DebugCommand::Throttle { mode: throttle_mode }
-                }
-                DebugSubcommand::NetworkDetails { filter } => {
-                    DebugCommand::NetworkDetails { filter: filter.clone() }
-                }
-                // Element highlighting
-                DebugSubcommand::Highlight { selector, color, duration, all } => {
-                    DebugCommand::Highlight {
-                        selector: selector.clone(),
-                        color: color.clone(),
-                        duration: *duration,
-                        all: *all,
+                    DebugCommand::Throttle {
+                        mode: throttle_mode,
                     }
                 }
+                DebugSubcommand::NetworkDetails { filter } => DebugCommand::NetworkDetails {
+                    filter: filter.clone(),
+                },
+                // Element highlighting
+                DebugSubcommand::Highlight {
+                    selector,
+                    color,
+                    duration,
+                    all,
+                } => DebugCommand::Highlight {
+                    selector: selector.clone(),
+                    color: color.clone(),
+                    duration: *duration,
+                    all: *all,
+                },
                 DebugSubcommand::ClearHighlights => DebugCommand::ClearHighlights,
                 DebugSubcommand::Captcha => DebugCommand::Captcha,
             };
@@ -1053,12 +1083,16 @@ async fn run_command(cli: Cli, formatter: &Formatter) -> Result<()> {
 
             // Build action info for session recording
             let (cmd_name, selector, args) = match command {
-                InteractSubcommand::Click { selector, coords } => {
-                    ("click", selector.clone(), serde_json::json!({ "coords": coords }))
-                }
-                InteractSubcommand::Type { selector, text, .. } => {
-                    ("type", selector.clone(), serde_json::json!({ "value": text }))
-                }
+                InteractSubcommand::Click { selector, coords } => (
+                    "click",
+                    selector.clone(),
+                    serde_json::json!({ "coords": coords }),
+                ),
+                InteractSubcommand::Type { selector, text, .. } => (
+                    "type",
+                    selector.clone(),
+                    serde_json::json!({ "value": text }),
+                ),
                 InteractSubcommand::Key { keys } => {
                     ("key", None, serde_json::json!({ "keys": keys }))
                 }
@@ -1074,184 +1108,201 @@ async fn run_command(cli: Cli, formatter: &Formatter) -> Result<()> {
                 InteractSubcommand::Scroll { to, .. } => {
                     ("scroll", to.clone(), serde_json::json!({}))
                 }
-                InteractSubcommand::Back => {
-                    ("back", None, serde_json::json!({}))
-                }
-                InteractSubcommand::Refresh => {
-                    ("refresh", None, serde_json::json!({}))
-                }
-                InteractSubcommand::Wait { selector, text, .. } => {
-                    ("wait", selector.clone(), serde_json::json!({ "text": text }))
-                }
+                InteractSubcommand::Back => ("back", None, serde_json::json!({})),
+                InteractSubcommand::Refresh => ("refresh", None, serde_json::json!({})),
+                InteractSubcommand::Wait { selector, text, .. } => (
+                    "wait",
+                    selector.clone(),
+                    serde_json::json!({ "text": text }),
+                ),
                 InteractSubcommand::Drag { from, to, .. } => {
                     ("drag", from.clone(), serde_json::json!({ "to": to }))
                 }
-                InteractSubcommand::Select { selector, value, .. } => {
-                    ("select", Some(selector.clone()), serde_json::json!({ "value": value }))
-                }
-                InteractSubcommand::Upload { selector, files } => {
-                    ("upload", Some(selector.clone()), serde_json::json!({ "files": files }))
-                }
-                InteractSubcommand::Dialog { accept, text } => {
-                    ("dialog", None, serde_json::json!({ "accept": accept, "text": text }))
-                }
-                InteractSubcommand::Resize { width, height } => {
-                    ("resize", None, serde_json::json!({ "width": width, "height": height }))
-                }
-                InteractSubcommand::Pdf { .. } => {
-                    ("pdf", None, serde_json::json!({}))
-                }
+                InteractSubcommand::Select {
+                    selector, value, ..
+                } => (
+                    "select",
+                    Some(selector.clone()),
+                    serde_json::json!({ "value": value }),
+                ),
+                InteractSubcommand::Upload { selector, files } => (
+                    "upload",
+                    Some(selector.clone()),
+                    serde_json::json!({ "files": files }),
+                ),
+                InteractSubcommand::Dialog { accept, text } => (
+                    "dialog",
+                    None,
+                    serde_json::json!({ "accept": accept, "text": text }),
+                ),
+                InteractSubcommand::Resize { width, height } => (
+                    "resize",
+                    None,
+                    serde_json::json!({ "width": width, "height": height }),
+                ),
+                InteractSubcommand::Pdf { .. } => ("pdf", None, serde_json::json!({})),
                 InteractSubcommand::MouseMove { coords } => {
                     ("mouse_move", None, serde_json::json!({ "coords": coords }))
                 }
                 InteractSubcommand::CursorPosition => {
                     ("cursor_position", None, serde_json::json!({}))
                 }
-                InteractSubcommand::HoldKey { key, duration } => {
-                    ("hold_key", None, serde_json::json!({ "key": key, "duration": duration }))
-                }
-                InteractSubcommand::TripleClick { selector, coords } => {
-                    ("triple_click", selector.clone(), serde_json::json!({ "coords": coords }))
-                }
+                InteractSubcommand::HoldKey { key, duration } => (
+                    "hold_key",
+                    None,
+                    serde_json::json!({ "key": key, "duration": duration }),
+                ),
+                InteractSubcommand::TripleClick { selector, coords } => (
+                    "triple_click",
+                    selector.clone(),
+                    serde_json::json!({ "coords": coords }),
+                ),
                 InteractSubcommand::MouseDown { button } => {
                     ("mouse_down", None, serde_json::json!({ "button": button }))
                 }
                 InteractSubcommand::MouseUp { button } => {
                     ("mouse_up", None, serde_json::json!({ "button": button }))
                 }
-                InteractSubcommand::ScreenshotRegion { region, .. } => {
-                    ("screenshot_region", None, serde_json::json!({ "region": region }))
-                }
-                InteractSubcommand::WaitDuration { duration } => {
-                    ("wait_duration", None, serde_json::json!({ "duration": duration }))
-                }
+                InteractSubcommand::ScreenshotRegion { region, .. } => (
+                    "screenshot_region",
+                    None,
+                    serde_json::json!({ "region": region }),
+                ),
+                InteractSubcommand::WaitDuration { duration } => (
+                    "wait_duration",
+                    None,
+                    serde_json::json!({ "duration": duration }),
+                ),
             };
 
             let cmd = match command {
-                InteractSubcommand::Click { selector, coords } => {
-                    InteractCommand::Click {
-                        selector: selector.clone(),
-                        coords: *coords,
-                    }
-                }
-                InteractSubcommand::Type { selector, text, focused } => {
-                    InteractCommand::Type {
-                        selector: selector.clone(),
-                        text: text.clone(),
-                        focused: *focused,
-                    }
-                }
-                InteractSubcommand::Key { keys } => {
-                    InteractCommand::Key { keys: keys.clone() }
-                }
-                InteractSubcommand::Hover { selector } => {
-                    InteractCommand::Hover { selector: selector.clone() }
-                }
-                InteractSubcommand::Scroll { down, up, left, right, to } => {
-                    InteractCommand::Scroll {
-                        down: *down,
-                        up: *up,
-                        left: *left,
-                        right: *right,
-                        to: to.clone(),
-                    }
-                }
-                InteractSubcommand::Screenshot { full, element, output } => {
-                    InteractCommand::Screenshot {
-                        full: *full,
-                        element: element.clone(),
-                        output: output.clone(),
-                    }
-                }
+                InteractSubcommand::Click { selector, coords } => InteractCommand::Click {
+                    selector: selector.clone(),
+                    coords: *coords,
+                },
+                InteractSubcommand::Type {
+                    selector,
+                    text,
+                    focused,
+                } => InteractCommand::Type {
+                    selector: selector.clone(),
+                    text: text.clone(),
+                    focused: *focused,
+                },
+                InteractSubcommand::Key { keys } => InteractCommand::Key { keys: keys.clone() },
+                InteractSubcommand::Hover { selector } => InteractCommand::Hover {
+                    selector: selector.clone(),
+                },
+                InteractSubcommand::Scroll {
+                    down,
+                    up,
+                    left,
+                    right,
+                    to,
+                } => InteractCommand::Scroll {
+                    down: *down,
+                    up: *up,
+                    left: *left,
+                    right: *right,
+                    to: to.clone(),
+                },
+                InteractSubcommand::Screenshot {
+                    full,
+                    element,
+                    output,
+                } => InteractCommand::Screenshot {
+                    full: *full,
+                    element: element.clone(),
+                    output: output.clone(),
+                },
                 InteractSubcommand::Navigate { url } => {
                     InteractCommand::Navigate { url: url.clone() }
                 }
                 InteractSubcommand::Back => InteractCommand::Back,
                 InteractSubcommand::Refresh => InteractCommand::Refresh,
-                InteractSubcommand::Wait { selector, visible, gone, text, text_gone, timeout } => {
-                    InteractCommand::Wait {
-                        selector: selector.clone().unwrap_or_default(),
-                        visible: *visible,
-                        gone: *gone,
-                        timeout_ms: *timeout,
-                        text: text.clone(),
-                        text_gone: text_gone.clone(),
-                    }
-                }
-                InteractSubcommand::Drag { from, to, from_coords, to_coords } => {
-                    InteractCommand::Drag {
-                        from_selector: from.clone(),
-                        to_selector: to.clone(),
-                        from_coords: *from_coords,
-                        to_coords: *to_coords,
-                    }
-                }
-                InteractSubcommand::Select { selector, value, by_label, by_index } => {
-                    InteractCommand::Select {
-                        selector: selector.clone(),
-                        value: value.clone(),
-                        by_label: *by_label,
-                        by_index: *by_index,
-                    }
-                }
-                InteractSubcommand::Upload { selector, files } => {
-                    InteractCommand::Upload {
-                        selector: selector.clone(),
-                        files: files.clone(),
-                    }
-                }
-                InteractSubcommand::Dialog { accept, text } => {
-                    InteractCommand::Dialog {
-                        accept: *accept,
-                        text: text.clone(),
-                    }
-                }
-                InteractSubcommand::Resize { width, height } => {
-                    InteractCommand::Resize {
-                        width: *width,
-                        height: *height,
-                    }
-                }
-                InteractSubcommand::Pdf { output, landscape } => {
-                    InteractCommand::Pdf {
-                        output: output.clone(),
-                        landscape: *landscape,
-                    }
-                }
+                InteractSubcommand::Wait {
+                    selector,
+                    visible,
+                    gone,
+                    text,
+                    text_gone,
+                    timeout,
+                } => InteractCommand::Wait {
+                    selector: selector.clone().unwrap_or_default(),
+                    visible: *visible,
+                    gone: *gone,
+                    timeout_ms: *timeout,
+                    text: text.clone(),
+                    text_gone: text_gone.clone(),
+                },
+                InteractSubcommand::Drag {
+                    from,
+                    to,
+                    from_coords,
+                    to_coords,
+                } => InteractCommand::Drag {
+                    from_selector: from.clone(),
+                    to_selector: to.clone(),
+                    from_coords: *from_coords,
+                    to_coords: *to_coords,
+                },
+                InteractSubcommand::Select {
+                    selector,
+                    value,
+                    by_label,
+                    by_index,
+                } => InteractCommand::Select {
+                    selector: selector.clone(),
+                    value: value.clone(),
+                    by_label: *by_label,
+                    by_index: *by_index,
+                },
+                InteractSubcommand::Upload { selector, files } => InteractCommand::Upload {
+                    selector: selector.clone(),
+                    files: files.clone(),
+                },
+                InteractSubcommand::Dialog { accept, text } => InteractCommand::Dialog {
+                    accept: *accept,
+                    text: text.clone(),
+                },
+                InteractSubcommand::Resize { width, height } => InteractCommand::Resize {
+                    width: *width,
+                    height: *height,
+                },
+                InteractSubcommand::Pdf { output, landscape } => InteractCommand::Pdf {
+                    output: output.clone(),
+                    landscape: *landscape,
+                },
                 // Anthropic Computer Use features
                 InteractSubcommand::MouseMove { coords } => {
                     InteractCommand::MouseMove { coords: *coords }
                 }
-                InteractSubcommand::CursorPosition => {
-                    InteractCommand::CursorPosition
-                }
-                InteractSubcommand::HoldKey { key, duration } => {
-                    InteractCommand::HoldKey {
-                        key: key.clone(),
-                        duration_ms: *duration,
-                    }
-                }
+                InteractSubcommand::CursorPosition => InteractCommand::CursorPosition,
+                InteractSubcommand::HoldKey { key, duration } => InteractCommand::HoldKey {
+                    key: key.clone(),
+                    duration_ms: *duration,
+                },
                 InteractSubcommand::TripleClick { selector, coords } => {
                     InteractCommand::TripleClick {
                         selector: selector.clone(),
                         coords: *coords,
                     }
                 }
-                InteractSubcommand::MouseDown { button } => {
-                    InteractCommand::MouseDown { button: button.clone() }
-                }
-                InteractSubcommand::MouseUp { button } => {
-                    InteractCommand::MouseUp { button: button.clone() }
-                }
+                InteractSubcommand::MouseDown { button } => InteractCommand::MouseDown {
+                    button: button.clone(),
+                },
+                InteractSubcommand::MouseUp { button } => InteractCommand::MouseUp {
+                    button: button.clone(),
+                },
                 InteractSubcommand::ScreenshotRegion { region, output } => {
                     InteractCommand::ScreenshotRegion {
                         region: *region,
                         output: output.clone(),
                     }
                 }
-                InteractSubcommand::WaitDuration { duration } => {
-                    InteractCommand::WaitDuration { duration_ms: *duration }
-                }
+                InteractSubcommand::WaitDuration { duration } => InteractCommand::WaitDuration {
+                    duration_ms: *duration,
+                },
             };
 
             // Build action for recording
@@ -1272,7 +1323,14 @@ async fn run_command(cli: Cli, formatter: &Formatter) -> Result<()> {
                 let action = if result.is_ok() {
                     action_builder.success()
                 } else {
-                    action_builder.failed(result.as_ref().err().map(|e| e.to_string()).unwrap_or_default().as_str())
+                    action_builder.failed(
+                        result
+                            .as_ref()
+                            .err()
+                            .map(|e| e.to_string())
+                            .unwrap_or_default()
+                            .as_str(),
+                    )
                 };
                 let _ = recorder.record_action(action);
             }
@@ -1282,24 +1340,12 @@ async fn run_command(cli: Cli, formatter: &Formatter) -> Result<()> {
         Commands::Session { command } => {
             handle_session(&mut cdp, &config, command, formatter).await
         }
-        Commands::Security { command } => {
-            handle_security(command, formatter)
-        }
-        Commands::Explain { command } => {
-            handle_explain(&mut cdp, command, formatter).await
-        }
-        Commands::Sites { command } => {
-            handle_sites(&mut cdp, command, formatter).await
-        }
-        Commands::Workflow { command } => {
-            handle_workflow(&mut cdp, command, formatter).await
-        }
-        Commands::Takeover { command } => {
-            handle_takeover(&mut cdp, command, formatter).await
-        }
-        Commands::Correction { command } => {
-            handle_correction(&mut cdp, command, formatter).await
-        }
+        Commands::Security { command } => handle_security(command, formatter),
+        Commands::Explain { command } => handle_explain(&mut cdp, command, formatter).await,
+        Commands::Sites { command } => handle_sites(&mut cdp, command, formatter).await,
+        Commands::Workflow { command } => handle_workflow(&mut cdp, command, formatter).await,
+        Commands::Takeover { command } => handle_takeover(&mut cdp, command, formatter).await,
+        Commands::Correction { command } => handle_correction(&mut cdp, command, formatter).await,
         Commands::Init => unreachable!(),
     }
 }
@@ -1318,25 +1364,47 @@ fn handle_init(formatter: &Formatter) -> Result<()> {
         let init_result = InitResult {
             already_exists: result.already_exists,
             domguard_dir: result.domguard_dir.display().to_string(),
-            config_path: result.domguard_dir.join("config.toml").display().to_string(),
+            config_path: result
+                .domguard_dir
+                .join("config.toml")
+                .display()
+                .to_string(),
         };
         let cmd_result = CommandResult::success(init_result);
         formatter.output_json(&cmd_result);
     } else if result.already_exists {
         formatter.warning("DOMGuard already initialized in this directory");
-        println!("  Config: {}", result.domguard_dir.join("config.toml").display());
+        println!(
+            "  Config: {}",
+            result.domguard_dir.join("config.toml").display()
+        );
     } else {
         println!("{}", "DOMGuard initialized!".green().bold());
         println!();
         formatter.header("Created");
-        formatter.item(&format!("{} - Configuration and data", result.domguard_dir.display()));
-        formatter.item(&format!("{}/config.toml - Settings", result.domguard_dir.display()));
-        formatter.item(&format!("{}/inspirations/ - Saved design patterns", result.domguard_dir.display()));
-        formatter.item(&format!("{}/screenshots/ - Captured screenshots", result.domguard_dir.display()));
+        formatter.item(&format!(
+            "{} - Configuration and data",
+            result.domguard_dir.display()
+        ));
+        formatter.item(&format!(
+            "{}/config.toml - Settings",
+            result.domguard_dir.display()
+        ));
+        formatter.item(&format!(
+            "{}/inspirations/ - Saved design patterns",
+            result.domguard_dir.display()
+        ));
+        formatter.item(&format!(
+            "{}/screenshots/ - Captured screenshots",
+            result.domguard_dir.display()
+        ));
 
         if let Some(guide_path) = result.guide_path {
             formatter.header("AI Agent Integration");
-            formatter.item(&format!("{} copied", guide_path.file_name().unwrap().to_string_lossy()));
+            formatter.item(&format!(
+                "{} copied",
+                guide_path.file_name().unwrap().to_string_lossy()
+            ));
         }
 
         formatter.header("Next steps");
@@ -1413,7 +1481,10 @@ async fn handle_status(cdp: &mut CdpConnection, formatter: &Formatter) -> Result
                 println!("  {} Not connected", "✗".red());
                 println!("    {}", e.to_string().dimmed());
                 println!();
-                formatter.hint(&format!("Start Chrome with: chrome --remote-debugging-port={}", config.chrome.port));
+                formatter.hint(&format!(
+                    "Start Chrome with: chrome --remote-debugging-port={}",
+                    config.chrome.port
+                ));
             }
         }
     }
@@ -1538,14 +1609,18 @@ async fn handle_session(
                         SessionStatus::Paused => "⏸".yellow(),
                         SessionStatus::Recording => "●".cyan(),
                     };
-                    println!("  {} {} - {} actions ({:?})",
+                    println!(
+                        "  {} {} - {} actions ({:?})",
                         status_color,
                         session.name.as_deref().unwrap_or(&session.id[..8]),
                         session.total_actions,
                         session.status
                     );
                     println!("    ID: {}", session.id);
-                    println!("    Started: {}", session.started_at.format("%Y-%m-%d %H:%M:%S"));
+                    println!(
+                        "    Started: {}",
+                        session.started_at.format("%Y-%m-%d %H:%M:%S")
+                    );
                     println!();
                 }
             }
@@ -1569,7 +1644,8 @@ async fn handle_session(
                         crate::session::ActionStatus::Skipped => "-".dimmed(),
                         crate::session::ActionStatus::Paused => "⏸".yellow(),
                     };
-                    println!("  {}. {} {} ({}ms)",
+                    println!(
+                        "  {}. {} {} ({}ms)",
                         i + 1,
                         status_icon,
                         action.command,
@@ -1632,9 +1708,14 @@ async fn handle_session(
 
             if !formatter.is_json() {
                 println!("{}", "Replaying session...".cyan().bold());
-                println!("  {} actions, {} delay",
+                println!(
+                    "  {} actions, {} delay",
                     session.actions.len(),
-                    if *step { "stepping".to_string() } else { format!("{}ms", delay) }
+                    if *step {
+                        "stepping".to_string()
+                    } else {
+                        format!("{}ms", delay)
+                    }
                 );
                 println!();
             }
@@ -1643,7 +1724,8 @@ async fn handle_session(
             // For now, we show what would be executed
             for (i, action) in session.actions.iter().enumerate() {
                 if !formatter.is_json() {
-                    println!("  [{}/{}] {} {}",
+                    println!(
+                        "  [{}/{}] {} {}",
                         i + 1,
                         session.actions.len(),
                         action.command,
@@ -1686,13 +1768,15 @@ fn print_session_summary(summary: &crate::session::SessionSummary, _formatter: &
     }
     println!("  ID: {}", summary.id);
     println!("  Status: {}", status_str);
-    println!("  Actions: {} ({} successful, {} failed)",
-        summary.total_actions,
-        summary.successful_actions,
-        summary.failed_actions
+    println!(
+        "  Actions: {} ({} successful, {} failed)",
+        summary.total_actions, summary.successful_actions, summary.failed_actions
     );
     println!("  Duration: {}ms", summary.total_duration_ms);
-    println!("  Started: {}", summary.started_at.format("%Y-%m-%d %H:%M:%S"));
+    println!(
+        "  Started: {}",
+        summary.started_at.format("%Y-%m-%d %H:%M:%S")
+    );
     if let Some(ended) = summary.ended_at {
         println!("  Ended: {}", ended.format("%Y-%m-%d %H:%M:%S"));
     }
@@ -1706,7 +1790,10 @@ fn export_session_as_bash(session: &crate::session::Session) -> String {
         output.push_str(&format!("# Session: {}\n", name));
     }
     output.push_str(&format!("# ID: {}\n", session.id));
-    output.push_str(&format!("# Recorded: {}\n", session.started_at.format("%Y-%m-%d %H:%M:%S")));
+    output.push_str(&format!(
+        "# Recorded: {}\n",
+        session.started_at.format("%Y-%m-%d %H:%M:%S")
+    ));
     output.push('\n');
     output.push_str("set -e  # Exit on error\n\n");
 
@@ -1726,7 +1813,10 @@ fn export_session_as_markdown(session: &crate::session::Session) -> String {
         output.push_str(&format!("**Name:** {}\n\n", name));
     }
     output.push_str(&format!("**ID:** `{}`\n\n", session.id));
-    output.push_str(&format!("**Recorded:** {}\n\n", session.started_at.format("%Y-%m-%d %H:%M:%S")));
+    output.push_str(&format!(
+        "**Recorded:** {}\n\n",
+        session.started_at.format("%Y-%m-%d %H:%M:%S")
+    ));
     output.push_str(&format!("**Total Actions:** {}\n\n", session.actions.len()));
     output.push_str("## Actions\n\n");
 
@@ -1737,7 +1827,8 @@ fn export_session_as_markdown(session: &crate::session::Session) -> String {
             crate::session::ActionStatus::Skipped => "⏭️",
             crate::session::ActionStatus::Paused => "⏸️",
         };
-        output.push_str(&format!("{}. {} **{}** ({}ms)\n",
+        output.push_str(&format!(
+            "{}. {} **{}** ({}ms)\n",
             i + 1,
             status,
             action.command,
@@ -1772,18 +1863,18 @@ fn format_action_as_command(action: &crate::session::RecordedAction) -> String {
     }
 }
 
-fn handle_security(
-    command: &SecuritySubcommand,
-    formatter: &Formatter,
-) -> Result<()> {
-    use crate::security::{BlockedSitesConfig, SecurityChecker, format_security_warning};
+fn handle_security(command: &SecuritySubcommand, formatter: &Formatter) -> Result<()> {
+    use crate::security::{format_security_warning, BlockedSitesConfig, SecurityChecker};
 
-    let config_dir = Config::find_domguard_dir()
-        .unwrap_or_else(Config::domguard_dir);
+    let config_dir = Config::find_domguard_dir().unwrap_or_else(Config::domguard_dir);
     let blocked_sites_path = config_dir.join("blocked_sites.toml");
 
     match command {
-        SecuritySubcommand::Check { action, target, value } => {
+        SecuritySubcommand::Check {
+            action,
+            target,
+            value,
+        } => {
             let config = BlockedSitesConfig::load(&blocked_sites_path).unwrap_or_default();
             let checker = SecurityChecker::new(config);
 
@@ -1793,7 +1884,10 @@ fn handle_security(
                 "navigate" => checker.check_navigation(target),
                 "upload" => checker.check_upload(&[PathBuf::from(target)]),
                 _ => {
-                    anyhow::bail!("Unknown action type: {}. Use: type, click, navigate, or upload", action);
+                    anyhow::bail!(
+                        "Unknown action type: {}. Use: type, click, navigate, or upload",
+                        action
+                    );
                 }
             };
 
@@ -1813,7 +1907,14 @@ fn handle_security(
                 formatter.output_json(&config);
             } else {
                 formatter.header("Blocked Sites Configuration");
-                println!("  Mode: {}", if config.default_block { "block by default" } else { "allow by default" });
+                println!(
+                    "  Mode: {}",
+                    if config.default_block {
+                        "block by default"
+                    } else {
+                        "allow by default"
+                    }
+                );
                 println!();
 
                 if !config.blocked.is_empty() {
@@ -1908,7 +2009,14 @@ fn handle_security(
                     "default_block": config.default_block
                 }));
             } else {
-                println!("Security mode set to: {}", if config.default_block { "block by default" } else { "allow by default" });
+                println!(
+                    "Security mode set to: {}",
+                    if config.default_block {
+                        "block by default"
+                    } else {
+                        "allow by default"
+                    }
+                );
             }
         }
 
@@ -1925,7 +2033,14 @@ fn handle_security(
             } else {
                 formatter.header("Security Configuration");
                 println!("  Config file: {}", blocked_sites_path.display());
-                println!("  Mode: {}", if config.default_block { "block by default" } else { "allow by default" });
+                println!(
+                    "  Mode: {}",
+                    if config.default_block {
+                        "block by default"
+                    } else {
+                        "allow by default"
+                    }
+                );
                 println!("  Blocked patterns: {}", config.blocked.len());
                 println!("  Allowed patterns: {}", config.allowed.len());
             }
@@ -1940,7 +2055,7 @@ async fn handle_explain(
     command: &ExplainSubcommand,
     formatter: &Formatter,
 ) -> Result<()> {
-    use crate::explanation::{explain_action, ExplanationContext, format_explanation};
+    use crate::explanation::{explain_action, format_explanation, ExplanationContext};
 
     // Try to get context from current page
     let context = if cdp.connect().await.is_ok() {
@@ -1955,21 +2070,11 @@ async fn handle_explain(
     };
 
     let explanation = match command {
-        ExplainSubcommand::Click { target } => {
-            explain_action("click", Some(target), &context)
-        }
-        ExplainSubcommand::Type { target } => {
-            explain_action("type", Some(target), &context)
-        }
-        ExplainSubcommand::Key { keys } => {
-            explain_action("key", Some(keys), &context)
-        }
-        ExplainSubcommand::Navigate { url } => {
-            explain_action("navigate", Some(url), &context)
-        }
-        ExplainSubcommand::Wait { target } => {
-            explain_action("wait", Some(target), &context)
-        }
+        ExplainSubcommand::Click { target } => explain_action("click", Some(target), &context),
+        ExplainSubcommand::Type { target } => explain_action("type", Some(target), &context),
+        ExplainSubcommand::Key { keys } => explain_action("key", Some(keys), &context),
+        ExplainSubcommand::Navigate { url } => explain_action("navigate", Some(url), &context),
+        ExplainSubcommand::Wait { target } => explain_action("wait", Some(target), &context),
         ExplainSubcommand::Interact { command, target } => {
             explain_action(command, target.as_deref(), &context)
         }
@@ -1991,7 +2096,7 @@ async fn handle_sites(
     command: &SitesSubcommand,
     formatter: &Formatter,
 ) -> Result<()> {
-    use crate::site_instructions::{SiteInstructionsManager, format_instructions};
+    use crate::site_instructions::{format_instructions, SiteInstructionsManager};
 
     let sites_dir = Config::find_domguard_dir()
         .unwrap_or_else(Config::domguard_dir)
@@ -2013,7 +2118,8 @@ async fn handle_sites(
                 println!("{}", "Saved Site Instructions".cyan().bold());
                 println!();
                 for site in sites {
-                    println!("  {} - {}",
+                    println!(
+                        "  {} - {}",
                         site.domain,
                         site.description.as_deref().unwrap_or("(no description)")
                     );
@@ -2042,7 +2148,10 @@ async fn handle_sites(
                 }));
             } else {
                 println!("No instructions found for: {}", domain);
-                formatter.hint(&format!("Use 'domguard sites create {}' to create one", domain));
+                formatter.hint(&format!(
+                    "Use 'domguard sites create {}' to create one",
+                    domain
+                ));
             }
         }
 
@@ -2087,7 +2196,9 @@ async fn handle_sites(
 
         SitesSubcommand::Current => {
             if cdp.connect().await.is_err() {
-                anyhow::bail!("Chrome not connected. Start Chrome with --remote-debugging-port=9222");
+                anyhow::bail!(
+                    "Chrome not connected. Start Chrome with --remote-debugging-port=9222"
+                );
             }
 
             let current_url = cdp.current_url().await?;
@@ -2113,8 +2224,15 @@ async fn handle_sites(
             } else {
                 println!("No instructions for: {}", current_url);
                 // Extract domain for hint
-                if let Some(domain) = current_url.split("://").nth(1).and_then(|s| s.split('/').next()) {
-                    formatter.hint(&format!("Use 'domguard sites create {}' to create one", domain));
+                if let Some(domain) = current_url
+                    .split("://")
+                    .nth(1)
+                    .and_then(|s| s.split('/').next())
+                {
+                    formatter.hint(&format!(
+                        "Use 'domguard sites create {}' to create one",
+                        domain
+                    ));
                 }
             }
         }
@@ -2140,9 +2258,7 @@ async fn handle_sites(
                 }));
             } else {
                 println!("Opening {} in {}...", path.display(), editor);
-                let status = std::process::Command::new(&editor)
-                    .arg(&path)
-                    .status();
+                let status = std::process::Command::new(&editor).arg(&path).status();
 
                 match status {
                     Ok(s) if s.success() => println!("Saved!"),
@@ -2161,7 +2277,9 @@ async fn handle_workflow(
     command: &WorkflowSubcommand,
     formatter: &Formatter,
 ) -> Result<()> {
-    use crate::workflow::{WorkflowManager, format_workflow, format_workflow_list, substitute_params};
+    use crate::workflow::{
+        format_workflow, format_workflow_list, substitute_params, WorkflowManager,
+    };
 
     let workflows_dir = Config::find_domguard_dir()
         .unwrap_or_else(Config::domguard_dir)
@@ -2197,9 +2315,10 @@ async fn handle_workflow(
         }
 
         WorkflowSubcommand::Show { id } => {
-            if let Some(workflow) = manager.get(id).or_else(|| {
-                manager.find_by_name(id).first().copied()
-            }) {
+            if let Some(workflow) = manager
+                .get(id)
+                .or_else(|| manager.find_by_name(id).first().copied())
+            {
                 if formatter.is_json() {
                     formatter.output_json(workflow);
                 } else {
@@ -2254,14 +2373,24 @@ async fn handle_workflow(
                 println!("  ID: {}", workflow.id);
                 println!("  File: {}", path.display());
                 println!();
-                formatter.hint(&format!("Edit with 'domguard workflow edit {}'", workflow.id));
+                formatter.hint(&format!(
+                    "Edit with 'domguard workflow edit {}'",
+                    workflow.id
+                ));
             }
         }
 
-        WorkflowSubcommand::Run { id, param, dry_run, delay } => {
-            let workflow = manager.get(id).or_else(|| {
-                manager.find_by_name(id).first().copied()
-            }).ok_or_else(|| anyhow::anyhow!("Workflow not found: {}", id))?.clone();
+        WorkflowSubcommand::Run {
+            id,
+            param,
+            dry_run,
+            delay,
+        } => {
+            let workflow = manager
+                .get(id)
+                .or_else(|| manager.find_by_name(id).first().copied())
+                .ok_or_else(|| anyhow::anyhow!("Workflow not found: {}", id))?
+                .clone();
 
             // Build parameter map
             let params: std::collections::HashMap<String, String> = param.iter().cloned().collect();
@@ -2285,7 +2414,9 @@ async fn handle_workflow(
                     println!("{}", "Dry Run - Steps to execute:".cyan().bold());
                     println!();
                     for (i, step) in workflow.steps.iter().enumerate() {
-                        let target = step.target.as_ref()
+                        let target = step
+                            .target
+                            .as_ref()
                             .map(|t| substitute_params(t, &params))
                             .unwrap_or_default();
                         println!("  {}. {} {}", i + 1, step.action, target);
@@ -2296,7 +2427,10 @@ async fn handle_workflow(
                 cdp.connect().await?;
 
                 if !formatter.is_json() {
-                    println!("{}", format!("Running workflow: {}", workflow.name).cyan().bold());
+                    println!(
+                        "{}",
+                        format!("Running workflow: {}", workflow.name).cyan().bold()
+                    );
                     println!();
                 }
 
@@ -2306,13 +2440,12 @@ async fn handle_workflow(
                 for (i, step) in workflow.steps.iter().enumerate() {
                     let step_start = std::time::Instant::now();
 
-                    let target = step.target.as_ref()
-                        .map(|t| substitute_params(t, &params));
-                    let value = step.value.as_ref()
-                        .map(|v| substitute_params(v, &params));
+                    let target = step.target.as_ref().map(|t| substitute_params(t, &params));
+                    let value = step.value.as_ref().map(|v| substitute_params(v, &params));
 
                     if !formatter.is_json() {
-                        println!("  [{}/{}] {} {}",
+                        println!(
+                            "  [{}/{}] {} {}",
                             i + 1,
                             workflow.steps.len(),
                             step.action,
@@ -2321,7 +2454,8 @@ async fn handle_workflow(
                     }
 
                     // Execute the step
-                    let result = execute_workflow_step(cdp, step, target.as_deref(), value.as_deref()).await;
+                    let result =
+                        execute_workflow_step(cdp, step, target.as_deref(), value.as_deref()).await;
 
                     let step_result = crate::workflow::StepResult {
                         index: i,
@@ -2340,7 +2474,9 @@ async fn handle_workflow(
                 }
 
                 let duration_ms = start.elapsed().as_millis() as u64;
-                let success = step_results.iter().all(|r| r.success || !workflow.steps[r.index].required);
+                let success = step_results
+                    .iter()
+                    .all(|r| r.success || !workflow.steps[r.index].required);
 
                 manager.record_run(&workflow.id, success)?;
 
@@ -2402,9 +2538,7 @@ async fn handle_workflow(
                 }));
             } else {
                 println!("Opening {} in {}...", path.display(), editor);
-                let status = std::process::Command::new(&editor)
-                    .arg(&path)
-                    .status();
+                let status = std::process::Command::new(&editor).arg(&path).status();
 
                 match status {
                     Ok(s) if s.success() => println!("Saved!"),
@@ -2481,14 +2615,18 @@ async fn handle_takeover(
     command: &TakeoverSubcommand,
     formatter: &Formatter,
 ) -> Result<()> {
-    use crate::takeover::{TakeoverManager, TakeoverSession, TakeoverReason, format_takeover};
+    use crate::takeover::{format_takeover, TakeoverManager, TakeoverReason, TakeoverSession};
 
-    let domguard_dir = Config::find_domguard_dir()
-        .unwrap_or_else(Config::domguard_dir);
+    let domguard_dir = Config::find_domguard_dir().unwrap_or_else(Config::domguard_dir);
     let manager = TakeoverManager::new(domguard_dir);
 
     match command {
-        TakeoverSubcommand::Request { reason, message, instructions, expected } => {
+        TakeoverSubcommand::Request {
+            reason,
+            message,
+            instructions,
+            expected,
+        } => {
             // Check if already in takeover
             if manager.is_active() {
                 if formatter.is_json() {
@@ -2522,19 +2660,27 @@ async fn handle_takeover(
             };
 
             // Build default message if not provided
-            let msg = message.clone().unwrap_or_else(|| {
-                match &takeover_reason {
-                    TakeoverReason::Captcha => "CAPTCHA detected - human verification required".to_string(),
-                    TakeoverReason::Authentication => "Authentication required - please log in".to_string(),
-                    TakeoverReason::SensitiveAction => "Sensitive action requires human confirmation".to_string(),
-                    TakeoverReason::Error => "Error occurred - human intervention needed".to_string(),
-                    TakeoverReason::Uncertain => "Agent unsure how to proceed - please help".to_string(),
-                    TakeoverReason::ComplexInteraction => "Complex interaction - human control needed".to_string(),
-                    TakeoverReason::TwoFactorAuth => "Two-factor authentication required".to_string(),
-                    TakeoverReason::Payment => "Payment action requires human confirmation".to_string(),
-                    TakeoverReason::UserRequested => "User requested control".to_string(),
-                    TakeoverReason::Custom(s) => s.clone(),
+            let msg = message.clone().unwrap_or_else(|| match &takeover_reason {
+                TakeoverReason::Captcha => {
+                    "CAPTCHA detected - human verification required".to_string()
                 }
+                TakeoverReason::Authentication => {
+                    "Authentication required - please log in".to_string()
+                }
+                TakeoverReason::SensitiveAction => {
+                    "Sensitive action requires human confirmation".to_string()
+                }
+                TakeoverReason::Error => "Error occurred - human intervention needed".to_string(),
+                TakeoverReason::Uncertain => {
+                    "Agent unsure how to proceed - please help".to_string()
+                }
+                TakeoverReason::ComplexInteraction => {
+                    "Complex interaction - human control needed".to_string()
+                }
+                TakeoverReason::TwoFactorAuth => "Two-factor authentication required".to_string(),
+                TakeoverReason::Payment => "Payment action requires human confirmation".to_string(),
+                TakeoverReason::UserRequested => "User requested control".to_string(),
+                TakeoverReason::Custom(s) => s.clone(),
             });
 
             let mut session = TakeoverSession::new(takeover_reason, &msg);
@@ -2582,7 +2728,14 @@ async fn handle_takeover(
                 } else {
                     println!("{}", "TAKEOVER COMPLETE".green().bold());
                     println!();
-                    println!("  Result: {}", if *success { "Success".green() } else { "Failed".red() });
+                    println!(
+                        "  Result: {}",
+                        if *success {
+                            "Success".green()
+                        } else {
+                            "Failed".red()
+                        }
+                    );
                     if let Some(duration) = session.duration_secs {
                         println!("  Duration: {}s", duration);
                     }
@@ -2663,7 +2816,8 @@ async fn handle_takeover(
                         Some(false) => "✗".red(),
                         None => "?".dimmed(),
                     };
-                    println!("  {} {} - {:?}",
+                    println!(
+                        "  {} {} - {:?}",
                         success_icon,
                         session.started_at.format("%Y-%m-%d %H:%M:%S"),
                         session.reason
@@ -2687,8 +2841,8 @@ async fn handle_correction(
     formatter: &Formatter,
 ) -> Result<()> {
     use crate::correction::{
-        classify_error, get_recovery_strategies, CorrectionConfig,
-        AutomationError, RecoveryStrategy, dismiss_overlay_script, wait_stable_script,
+        classify_error, dismiss_overlay_script, get_recovery_strategies, wait_stable_script,
+        AutomationError, CorrectionConfig, RecoveryStrategy,
     };
 
     match command {
@@ -2700,14 +2854,45 @@ async fn handle_correction(
             } else {
                 println!("{}", "Self-Correction Configuration".cyan().bold());
                 println!();
-                println!("  Enabled: {}", if config.enabled { "Yes".green() } else { "No".red() });
+                println!(
+                    "  Enabled: {}",
+                    if config.enabled {
+                        "Yes".green()
+                    } else {
+                        "No".red()
+                    }
+                );
                 println!("  Max retries: {}", config.max_retries);
                 println!("  Base delay: {}ms", config.base_delay_ms);
-                println!("  Exponential backoff: {}", if config.exponential_backoff { "Yes" } else { "No" });
+                println!(
+                    "  Exponential backoff: {}",
+                    if config.exponential_backoff {
+                        "Yes"
+                    } else {
+                        "No"
+                    }
+                );
                 println!("  Max recovery time: {}ms", config.max_recovery_time_ms);
-                println!("  Auto-dismiss dialogs: {}", if config.auto_dismiss_dialogs { "Yes" } else { "No" });
-                println!("  Auto-scroll: {}", if config.auto_scroll { "Yes" } else { "No" });
-                println!("  Takeover on failure: {}", if config.takeover_on_failure { "Yes" } else { "No" });
+                println!(
+                    "  Auto-dismiss dialogs: {}",
+                    if config.auto_dismiss_dialogs {
+                        "Yes"
+                    } else {
+                        "No"
+                    }
+                );
+                println!(
+                    "  Auto-scroll: {}",
+                    if config.auto_scroll { "Yes" } else { "No" }
+                );
+                println!(
+                    "  Takeover on failure: {}",
+                    if config.takeover_on_failure {
+                        "Yes"
+                    } else {
+                        "No"
+                    }
+                );
             }
         }
 
@@ -2772,7 +2957,10 @@ async fn handle_correction(
                             Err(e) => (false, e.to_string()),
                         }
                     } else {
-                        (false, "Target selector required for scroll strategy".to_string())
+                        (
+                            false,
+                            "Target selector required for scroll strategy".to_string(),
+                        )
                     }
                 }
                 "dismiss-overlay" | "overlay" => {
@@ -2780,7 +2968,14 @@ async fn handle_correction(
                     match cdp.evaluate(script).await {
                         Ok(result) => {
                             let dismissed = result.as_bool().unwrap_or(false);
-                            (dismissed, if dismissed { "Overlays dismissed".to_string() } else { "No overlays found".to_string() })
+                            (
+                                dismissed,
+                                if dismissed {
+                                    "Overlays dismissed".to_string()
+                                } else {
+                                    "No overlays found".to_string()
+                                },
+                            )
                         }
                         Err(e) => (false, e.to_string()),
                     }
@@ -2789,20 +2984,39 @@ async fn handle_correction(
                     let script = wait_stable_script();
                     match cdp.evaluate(script).await {
                         Ok(result) => {
-                            let stable = result.get("stable").and_then(|v| v.as_bool()).unwrap_or(false);
-                            let duration = result.get("duration").and_then(|v| v.as_u64()).unwrap_or(0);
-                            (stable, format!("Page {} after {}ms", if stable { "stabilized" } else { "still changing" }, duration))
+                            let stable = result
+                                .get("stable")
+                                .and_then(|v| v.as_bool())
+                                .unwrap_or(false);
+                            let duration =
+                                result.get("duration").and_then(|v| v.as_u64()).unwrap_or(0);
+                            (
+                                stable,
+                                format!(
+                                    "Page {} after {}ms",
+                                    if stable {
+                                        "stabilized"
+                                    } else {
+                                        "still changing"
+                                    },
+                                    duration
+                                ),
+                            )
                         }
                         Err(e) => (false, e.to_string()),
                     }
                 }
-                "refresh" => {
-                    match cdp.refresh().await {
-                        Ok(_) => (true, "Page refreshed".to_string()),
-                        Err(e) => (false, e.to_string()),
-                    }
-                }
-                _ => (false, format!("Unknown strategy: {}. Use: scroll, dismiss-overlay, wait-stable, refresh", strategy)),
+                "refresh" => match cdp.refresh().await {
+                    Ok(_) => (true, "Page refreshed".to_string()),
+                    Err(e) => (false, e.to_string()),
+                },
+                _ => (
+                    false,
+                    format!(
+                        "Unknown strategy: {}. Use: scroll, dismiss-overlay, wait-stable, refresh",
+                        strategy
+                    ),
+                ),
             };
 
             if formatter.is_json() {
@@ -2843,7 +3057,10 @@ async fn handle_correction(
 
             let script = wait_stable_script();
             let result = cdp.evaluate(script).await?;
-            let stable = result.get("stable").and_then(|v| v.as_bool()).unwrap_or(false);
+            let stable = result
+                .get("stable")
+                .and_then(|v| v.as_bool())
+                .unwrap_or(false);
             let duration = result.get("duration").and_then(|v| v.as_u64()).unwrap_or(0);
 
             if formatter.is_json() {
@@ -2852,9 +3069,15 @@ async fn handle_correction(
                     "duration_ms": duration
                 }));
             } else if stable {
-                println!("{}", format!("Page stable after {}ms", duration).green().bold());
+                println!(
+                    "{}",
+                    format!("Page stable after {}ms", duration).green().bold()
+                );
             } else {
-                println!("{}", format!("Page still changing after {}ms", duration).yellow());
+                println!(
+                    "{}",
+                    format!("Page still changing after {}ms", duration).yellow()
+                );
             }
         }
 
@@ -2862,7 +3085,9 @@ async fn handle_correction(
             let error = match error_type.to_lowercase().replace(['-', '_'], " ").as_str() {
                 "element not found" | "not found" => AutomationError::ElementNotFound,
                 "element not visible" | "not visible" => AutomationError::ElementNotVisible,
-                "element not interactable" | "not interactable" => AutomationError::ElementNotInteractable,
+                "element not interactable" | "not interactable" => {
+                    AutomationError::ElementNotInteractable
+                }
                 "navigation timeout" | "timeout" => AutomationError::NavigationTimeout,
                 "network" | "network error" => AutomationError::NetworkError,
                 "javascript" | "js error" => AutomationError::JavaScriptError,
@@ -2883,11 +3108,18 @@ async fn handle_correction(
                     "strategies": strategies
                 }));
             } else {
-                println!("{}", format!("Recovery Strategies for: {}", error).cyan().bold());
+                println!(
+                    "{}",
+                    format!("Recovery Strategies for: {}", error).cyan().bold()
+                );
                 println!();
                 for (i, strategy) in strategies.iter().enumerate() {
                     let is_takeover = matches!(strategy, RecoveryStrategy::RequestTakeover { .. });
-                    let marker = if is_takeover { "→".yellow() } else { format!("{}", i + 1).normal() };
+                    let marker = if is_takeover {
+                        "→".yellow()
+                    } else {
+                        format!("{}", i + 1).normal()
+                    };
                     println!("  {} {}", marker, strategy);
                 }
 

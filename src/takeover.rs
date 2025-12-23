@@ -136,9 +136,7 @@ impl TakeoverSession {
     pub fn complete(&mut self, success: bool, notes: Option<String>) {
         self.state = TakeoverState::ResumeRequested;
         self.ended_at = Some(chrono::Utc::now());
-        self.duration_secs = Some(
-            (chrono::Utc::now() - self.started_at).num_seconds() as u64
-        );
+        self.duration_secs = Some((chrono::Utc::now() - self.started_at).num_seconds() as u64);
         self.success = Some(success);
         self.user_notes = notes;
     }
@@ -163,8 +161,9 @@ impl TakeoverManager {
             if let Ok(content) = std::fs::read_to_string(&self.state_file) {
                 if let Ok(session) = serde_json::from_str::<TakeoverSession>(&content) {
                     // Check if still in takeover mode
-                    if session.state == TakeoverState::WaitingForUser ||
-                       session.state == TakeoverState::UserControl {
+                    if session.state == TakeoverState::WaitingForUser
+                        || session.state == TakeoverState::UserControl
+                    {
                         return Some(session);
                     }
                 }
@@ -187,7 +186,11 @@ impl TakeoverManager {
     }
 
     /// Complete the takeover and resume automation
-    pub fn complete(&self, success: bool, notes: Option<String>) -> Result<Option<TakeoverSession>> {
+    pub fn complete(
+        &self,
+        success: bool,
+        notes: Option<String>,
+    ) -> Result<Option<TakeoverSession>> {
         if let Some(mut session) = self.get_current() {
             session.complete(success, notes);
 
@@ -290,14 +293,20 @@ pub fn format_takeover(session: &TakeoverSession) -> String {
         output.push_str(&format!("  URL: {}\n", url));
     }
 
-    output.push_str(&format!("  Started: {}\n", session.started_at.format("%Y-%m-%d %H:%M:%S")));
+    output.push_str(&format!(
+        "  Started: {}\n",
+        session.started_at.format("%Y-%m-%d %H:%M:%S")
+    ));
 
     if let Some(duration) = session.duration_secs {
         output.push_str(&format!("  Duration: {}s\n", duration));
     }
 
     if let Some(success) = session.success {
-        output.push_str(&format!("  Success: {}\n", if success { "Yes" } else { "No" }));
+        output.push_str(&format!(
+            "  Success: {}\n",
+            if success { "Yes" } else { "No" }
+        ));
     }
 
     output
@@ -309,20 +318,15 @@ mod tests {
 
     #[test]
     fn test_create_takeover_session() {
-        let session = TakeoverSession::new(
-            TakeoverReason::Captcha,
-            "CAPTCHA detected"
-        );
+        let session = TakeoverSession::new(TakeoverReason::Captcha, "CAPTCHA detected");
         assert_eq!(session.state, TakeoverState::WaitingForUser);
         assert!(session.id.starts_with("takeover-"));
     }
 
     #[test]
     fn test_complete_takeover() {
-        let mut session = TakeoverSession::new(
-            TakeoverReason::UserRequested,
-            "User requested control"
-        );
+        let mut session =
+            TakeoverSession::new(TakeoverReason::UserRequested, "User requested control");
         session.complete(true, Some("Done".to_string()));
 
         assert_eq!(session.state, TakeoverState::ResumeRequested);
@@ -332,8 +336,8 @@ mod tests {
 
     #[test]
     fn test_with_url() {
-        let session = TakeoverSession::new(TakeoverReason::Error, "Error")
-            .with_url("https://example.com");
+        let session =
+            TakeoverSession::new(TakeoverReason::Error, "Error").with_url("https://example.com");
         assert_eq!(session.url, Some("https://example.com".to_string()));
     }
 
@@ -341,6 +345,9 @@ mod tests {
     fn test_with_instructions() {
         let session = TakeoverSession::new(TakeoverReason::Captcha, "CAPTCHA detected")
             .with_instructions("Please solve the CAPTCHA");
-        assert_eq!(session.instructions, Some("Please solve the CAPTCHA".to_string()));
+        assert_eq!(
+            session.instructions,
+            Some("Please solve the CAPTCHA".to_string())
+        );
     }
 }

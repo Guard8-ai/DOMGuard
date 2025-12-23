@@ -154,7 +154,9 @@ impl Session {
         if self.actions.is_empty() {
             return 1.0;
         }
-        let successes = self.actions.iter()
+        let successes = self
+            .actions
+            .iter()
             .filter(|a| a.status == ActionStatus::Success)
             .count();
         successes as f64 / self.actions.len() as f64
@@ -162,8 +164,7 @@ impl Session {
 
     /// Save session to file
     pub fn save(&self, path: &PathBuf) -> Result<()> {
-        let content = serde_json::to_string_pretty(self)
-            .context("Failed to serialize session")?;
+        let content = serde_json::to_string_pretty(self).context("Failed to serialize session")?;
         std::fs::write(path, content)
             .with_context(|| format!("Failed to save session to {}", path.display()))?;
         Ok(())
@@ -173,30 +174,34 @@ impl Session {
     pub fn load(path: &PathBuf) -> Result<Self> {
         let content = std::fs::read_to_string(path)
             .with_context(|| format!("Failed to read session from {}", path.display()))?;
-        let session: Session = serde_json::from_str(&content)
-            .context("Failed to parse session file")?;
+        let session: Session =
+            serde_json::from_str(&content).context("Failed to parse session file")?;
         Ok(session)
     }
 
     /// Generate a summary of the session
     pub fn summary(&self) -> SessionSummary {
-        let action_counts = self.actions.iter().fold(
-            std::collections::HashMap::new(),
-            |mut acc, action| {
-                *acc.entry(action.command.clone()).or_insert(0) += 1;
-                acc
-            },
-        );
+        let action_counts =
+            self.actions
+                .iter()
+                .fold(std::collections::HashMap::new(), |mut acc, action| {
+                    *acc.entry(action.command.clone()).or_insert(0) += 1;
+                    acc
+                });
 
         SessionSummary {
             id: self.id.clone(),
             name: self.name.clone(),
             status: self.status.clone(),
             total_actions: self.actions.len(),
-            successful_actions: self.actions.iter()
+            successful_actions: self
+                .actions
+                .iter()
                 .filter(|a| a.status == ActionStatus::Success)
                 .count(),
-            failed_actions: self.actions.iter()
+            failed_actions: self
+                .actions
+                .iter()
                 .filter(|a| a.status == ActionStatus::Failed)
                 .count(),
             total_duration_ms: self.total_duration_ms(),
@@ -267,8 +272,13 @@ impl SessionRecorder {
     pub fn start(&self, name: Option<String>, initial_url: Option<String>) -> Result<String> {
         // Check if there's already an active session
         if let Some(existing) = self.get_active_session() {
-            if existing.status == SessionStatus::Recording || existing.status == SessionStatus::Paused {
-                anyhow::bail!("A session is already active (ID: {}). Use 'session stop' first.", existing.id);
+            if existing.status == SessionStatus::Recording
+                || existing.status == SessionStatus::Paused
+            {
+                anyhow::bail!(
+                    "A session is already active (ID: {}). Use 'session stop' first.",
+                    existing.id
+                );
             }
         }
 
@@ -375,7 +385,11 @@ impl SessionRecorder {
             let entry = entry?;
             let path = entry.path();
             // Skip the active session file
-            if path.file_name().map(|n| n == "_active_session.json").unwrap_or(false) {
+            if path
+                .file_name()
+                .map(|n| n == "_active_session.json")
+                .unwrap_or(false)
+            {
                 continue;
             }
             if path.extension().map(|e| e == "json").unwrap_or(false) {
@@ -402,8 +416,7 @@ impl SessionRecorder {
     pub fn delete_session(&self, id: &str) -> Result<()> {
         let filename = format!("session_{}.json", id);
         let path = self.sessions_dir.join(filename);
-        std::fs::remove_file(&path)
-            .with_context(|| format!("Failed to delete session {}", id))
+        std::fs::remove_file(&path).with_context(|| format!("Failed to delete session {}", id))
     }
 }
 
@@ -479,7 +492,8 @@ fn uuid_v4() -> String {
         .unwrap_or_default();
     let timestamp = duration.as_nanos();
     let random: u64 = (timestamp as u64) ^ (std::process::id() as u64 * 0x5DEECE66D);
-    format!("{:016x}-{:04x}-4{:03x}-{:04x}-{:012x}",
+    format!(
+        "{:016x}-{:04x}-4{:03x}-{:04x}-{:012x}",
         timestamp & 0xFFFFFFFFFFFFFFFF,
         (random >> 48) & 0xFFFF,
         (random >> 36) & 0xFFF,
