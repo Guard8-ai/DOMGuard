@@ -1,6 +1,7 @@
 # DOMGuard
 
 [![CI](https://github.com/Guard8-ai/DOMGuard/actions/workflows/ci.yml/badge.svg)](https://github.com/Guard8-ai/DOMGuard/actions/workflows/ci.yml)
+[![Release](https://img.shields.io/github/v/release/Guard8-ai/DOMGuard)](https://github.com/Guard8-ai/DOMGuard/releases/latest)
 [![Documentation](https://readthedocs.org/projects/domguard/badge/?version=latest)](https://domguard.readthedocs.io/en/latest/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Rust](https://img.shields.io/badge/rust-1.70%2B-orange.svg)](https://www.rust-lang.org/)
@@ -23,10 +24,33 @@ Direct CDP access for AI agents. No middleware, no servers, sub-ms local respons
 
 ## Quick Start
 
-```bash
-# Install
-cargo install domguard
+### Download Pre-built Binary
 
+Download the latest release for your platform from [GitHub Releases](https://github.com/Guard8-ai/DOMGuard/releases/latest):
+
+| Platform | Binary |
+|----------|--------|
+| Linux x86_64 | `domguard-linux-x86_64` |
+| macOS ARM64 (Apple Silicon) | `domguard-macos-aarch64` |
+| Windows x86_64 | `domguard-windows-x86_64.exe` |
+
+```bash
+# Linux/macOS: Make executable and move to PATH
+chmod +x domguard-*
+sudo mv domguard-* /usr/local/bin/domguard
+
+# Windows: Add to PATH or run directly
+```
+
+### Install from Source
+
+```bash
+cargo install domguard
+```
+
+### Get Started
+
+```bash
 # Initialize in your project
 domguard init
 
