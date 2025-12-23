@@ -1,5 +1,10 @@
 # DOMGuard
 
+[![CI](https://github.com/Guard8-ai/DOMGuard/actions/workflows/ci.yml/badge.svg)](https://github.com/Guard8-ai/DOMGuard/actions/workflows/ci.yml)
+[![Documentation](https://readthedocs.org/projects/domguard/badge/?version=latest)](https://domguard.readthedocs.io/en/latest/)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![Rust](https://img.shields.io/badge/rust-1.70%2B-orange.svg)](https://www.rust-lang.org/)
+
 **Local-First Chrome DevTools CLI for AI Agents**
 
 Direct CDP access for AI agents. No middleware, no servers, sub-ms local response.
@@ -503,7 +508,7 @@ You have access to DOMGuard for browser automation via shell commands.
 ### From Source
 
 ```bash
-git clone https://github.com/AItomics/DOMGuard.git
+git clone https://github.com/Guard8-ai/DOMGuard.git
 cd DOMGuard
 cargo build --release
 ```
@@ -521,7 +526,7 @@ MIT License - see [LICENSE](LICENSE)
 
 Contributions welcome! See [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines.
 
-Built with [TaskGuard](https://github.com/AItomics/TaskGuard) in 2 days.
+Built with [TaskGuard](https://github.com/Guard8-ai/TaskGuard) in 2 days.
 
 ---
 
