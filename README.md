@@ -1,7 +1,7 @@
 # DOMGuard
 
 [![CI](https://github.com/Guard8-ai/DOMGuard/actions/workflows/ci.yml/badge.svg)](https://github.com/Guard8-ai/DOMGuard/actions/workflows/ci.yml)
-[![Release](https://img.shields.io/github/v/release/Guard8-ai/DOMGuard)](https://github.com/Guard8-ai/DOMGuard/releases/latest)
+[![Release](https://img.shields.io/github/release/Guard8-ai/DOMGuard.svg)](https://github.com/Guard8-ai/DOMGuard/releases/latest)
 [![Documentation](https://readthedocs.org/projects/domguard/badge/?version=latest)](https://domguard.readthedocs.io/en/latest/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Rust](https://img.shields.io/badge/rust-1.70%2B-orange.svg)](https://www.rust-lang.org/)
