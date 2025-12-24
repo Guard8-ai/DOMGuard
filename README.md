@@ -18,6 +18,41 @@
 
 Direct CDP access for AI agents. No middleware, no servers, sub-ms local response.
 
+## Why Rust CLI over MCP?
+
+At Guard8.ai, we build **Rust CLI tools** instead of MCP servers. Here's why:
+
+| Aspect | Rust CLI | MCP Servers | Python/Node CLI |
+|--------|----------|-------------|-----------------|
+| **Universality** | Any LLM/agent | MCP-compatible only | Any LLM/agent |
+| **Dependencies** | Zero | Runtime + protocol | Python/Node runtime |
+| **Installation** | Copy binary | Server setup | `pip install`, version conflicts |
+| **Startup time** | Instant (<10ms) | Server initialization | Runtime startup |
+| **Portability** | Single binary | Config + dependencies | Virtual envs, node_modules |
+| **Debugging** | Run manually | MCP inspector | Run manually |
+
+**Zero friction deployment:**
+```bash
+# Rust CLI - just works
+curl -L .../domguard -o domguard && chmod +x domguard
+./domguard status
+
+# Python - friction
+python -m venv .venv && source .venv/bin/activate
+pip install domguard  # hope dependencies resolve
+domguard status
+
+# MCP - more friction
+npm install @anthropic/mcp-server-domguard
+# configure claude_desktop_config.json
+# restart Claude Desktop
+# hope it connects
+```
+
+**The insight**: Every AI coding agent can execute shell commands. A single Rust binary means zero runtime dependencies, instant startup, and no version conflicts.
+
+**Rust CLI is the universal, zero-friction interface for AI agents.**
+
 ## Why DOMGuard?
 
 | Feature | DOMGuard | Playwright MCP | Chrome DevTools MCP | Project Mariner | OpenAI Operator |
@@ -31,6 +66,23 @@ Direct CDP access for AI agents. No middleware, no servers, sub-ms local respons
 | **Open Source** | Yes | Yes | Yes | No | No |
 
 ## Quick Start
+
+### Use with Any AI Coding Agent
+
+DOMGuard works with **any AI coding agent** that runs in a VM environment - Claude Code (web), Cursor, Windsurf, GitHub Copilot Workspace, and more.
+
+**Zero memorization workflow:**
+1. Ask the agent to install DOMGuard from `https://github.com/Guard8-ai/DOMGuard`
+2. Tag the guide file `@AGENTIC_AI_DOMGUARD_GUIDE.md` when you need browser automation
+3. Ask your questions naturally - the agent reads the guide and executes commands
+
+```
+You: @AGENTIC_AI_DOMGUARD_GUIDE.md take a screenshot of the current page
+You: @AGENTIC_AI_DOMGUARD_GUIDE.md click the login button and fill the form
+You: @AGENTIC_AI_DOMGUARD_GUIDE.md extract the design system from stripe.com
+```
+
+No need to memorize commands. The guide has everything the agent needs.
 
 ### Download Pre-built Binary
 
@@ -558,7 +610,43 @@ MIT License - see [LICENSE](LICENSE)
 
 Contributions welcome! See [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines.
 
-Built with [TaskGuard](https://github.com/Guard8-ai/TaskGuard) in 2 days.
+## Built With
+
+<table>
+  <tr>
+    <td align="center">
+      <a href="https://github.com/Guard8-ai/GroundedProgressiveArchitecture">
+        <strong>Grounded Progressive Architecture</strong>
+      </a>
+      <br>
+      <em>Design methodology</em>
+    </td>
+    <td align="center">
+      <a href="https://github.com/Guard8-ai/TaskGuard">
+        <strong>TaskGuard</strong>
+      </a>
+      <br>
+      <em>Task management</em>
+    </td>
+  </tr>
+</table>
+
+### Designed with GPA
+
+DOMGuard was designed using **[Grounded Progressive Architecture (GPA)](https://github.com/Guard8-ai/GroundedProgressiveArchitecture)** - a six-phase methodology that keeps AI focused while preserving human vision and decision authority:
+
+1. **Vision Casting** - Concrete solution sketch, not abstract goals
+2. **Iterative Deepening** - Refine through structured cycles
+3. **Stress Testing** - Identify problems without immediate fixes
+4. **Philosophical Grounding** - "Local-first, privacy-first, any LLM" principles
+5. **Boundary Setting** - Decisive cuts based on philosophy
+6. **Meta Review** - Process improvement
+
+**Result**: Complete architecture in 7 prompts. Zero scope drift.
+
+### Built with TaskGuard
+
+Development managed with **[TaskGuard](https://github.com/Guard8-ai/TaskGuard)** - AI-native task management with causality tracking. 84 tasks completed in 2 days.
 
 ---
 
