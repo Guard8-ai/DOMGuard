@@ -311,6 +311,10 @@ enum InteractSubcommand {
         /// Select nth matching element (0-indexed, -1 for last)
         #[arg(long, default_value = "0", allow_hyphen_values = true)]
         nth: i32,
+
+        /// Click element containing this text
+        #[arg(long)]
+        text: Option<String>,
     },
 
     /// Type text into element
@@ -1091,10 +1095,11 @@ async fn run_command(cli: Cli, formatter: &Formatter) -> Result<()> {
                     selector,
                     coords,
                     nth,
+                    text,
                 } => (
                     "click",
                     selector.clone(),
-                    serde_json::json!({ "coords": coords, "nth": nth }),
+                    serde_json::json!({ "coords": coords, "nth": nth, "text": text }),
                 ),
                 InteractSubcommand::Type { selector, text, .. } => (
                     "type",
@@ -1188,10 +1193,12 @@ async fn run_command(cli: Cli, formatter: &Formatter) -> Result<()> {
                     selector,
                     coords,
                     nth,
+                    text,
                 } => InteractCommand::Click {
                     selector: selector.clone(),
                     coords: *coords,
                     nth: *nth,
+                    text: text.clone(),
                 },
                 InteractSubcommand::Type {
                     selector,

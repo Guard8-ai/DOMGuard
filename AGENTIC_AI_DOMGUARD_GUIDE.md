@@ -21,9 +21,11 @@ domguard interact click "button[type='submit']"   # ✓ Attribute match
 domguard interact type "textarea" "hello"         # ✓ Positional args
 ```
 
-**To click by text content**, use `debug eval`:
+**To click by text content**, use `--text`:
 ```bash
-domguard debug eval "document.evaluate(\"//button[contains(text(),'Generate')]\", document, null, XPathResult.FIRST_ORDERED_NODE_TYPE, null).singleNodeValue?.click()"
+domguard interact click --text "Generate Strategy"   # ✓ Click by visible text
+domguard interact click --text "MSFT"                # ✓ Click dropdown option
+domguard interact click --text "Submit" --nth 1     # ✓ Second element with "Submit"
 ```
 
 ## Quick Reference
@@ -71,6 +73,8 @@ domguard debug throttle off                      # Disable throttling
 domguard interact click ".btn"                   # Click element (first match)
 domguard interact click "button" --nth 1         # Click second button
 domguard interact click "button" --nth -1        # Click last button
+domguard interact click --text "Submit"          # Click by visible text
+domguard interact click --text "Option" --nth 1  # Second element with text
 domguard interact click --coords 450,320         # Click coordinates
 domguard interact type "#input" "text"           # Type into element
 domguard interact type --focused "text"          # Type into focused
@@ -339,7 +343,7 @@ domguard interact wait ".dashboard" --visible
 ### Interact Commands
 | Command | Description |
 |---------|-------------|
-| `interact click [--nth N]` | Click element/coordinates (--nth for nth match) |
+| `interact click [--nth N] [--text T]` | Click element/coordinates/text (--nth for nth, --text for visible text) |
 | `interact type` | Type text into element |
 | `interact key` | Press key(s) |
 | `interact hover` | Hover over element |
@@ -448,4 +452,4 @@ domguard interact wait ".dashboard" --visible
 | `correction wait-stable` | Wait for page to stop changing |
 
 ---
-**Version**: 0.2.0 | **Config**: `.domguard/config.toml`
+**Version**: 0.4.0 | **Config**: `.domguard/config.toml`

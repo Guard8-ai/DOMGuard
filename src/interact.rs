@@ -41,6 +41,7 @@ pub enum InteractCommand {
         selector: Option<String>,
         coords: Option<(f64, f64)>,
         nth: i32,
+        text: Option<String>,
     },
     Type {
         selector: Option<String>,
@@ -148,7 +149,18 @@ pub async fn run_interact(
             selector,
             coords,
             nth,
-        } => interact_click(cdp, selector.as_deref(), coords, nth, formatter).await,
+            text,
+        } => {
+            interact_click(
+                cdp,
+                selector.as_deref(),
+                coords,
+                nth,
+                text.as_deref(),
+                formatter,
+            )
+            .await
+        }
         InteractCommand::Type {
             selector,
             text,
@@ -259,6 +271,7 @@ async fn interact_click(
     selector: Option<&str>,
     coords: Option<(f64, f64)>,
     nth: i32,
+    text: Option<&str>,
     formatter: &Formatter,
 ) -> Result<InteractResult> {
     if let Some((x, y)) = coords {
@@ -268,6 +281,23 @@ async fn interact_click(
             action: "click".to_string(),
             target: Some(format!("({}, {})", x, y)),
             details: None,
+        })
+    } else if let Some(txt) = text {
+        cdp.click_by_text(txt, nth).await?;
+        let nth_info = if nth != 0 {
+            format!(" (nth: {})", nth)
+        } else {
+            String::new()
+        };
+        formatter.success(&format!("Clicked text \"{}\"{}", txt, nth_info));
+        Ok(InteractResult {
+            action: "click".to_string(),
+            target: Some(format!("text:{}", txt)),
+            details: if nth != 0 {
+                Some(format!("nth: {}", nth))
+            } else {
+                None
+            },
         })
     } else if let Some(sel) = selector {
         cdp.click(sel, nth).await?;
@@ -287,7 +317,9 @@ async fn interact_click(
             },
         })
     } else {
-        Err(anyhow::anyhow!("Either selector or --coords required"))
+        Err(anyhow::anyhow!(
+            "Either selector, --text, or --coords required"
+        ))
     }
 }
 

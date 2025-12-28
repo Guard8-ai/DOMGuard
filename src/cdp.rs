@@ -455,6 +455,99 @@ impl CdpConnection {
         Err(anyhow!("No element matches selector \"{}\"", selector))
     }
 
+    /// Click element by visible text content
+    /// Useful for dynamic dropdowns and elements without stable CSS selectors
+    pub async fn click_by_text(&self, text: &str, nth: i32) -> Result<()> {
+        let escaped = text
+            .replace('\\', "\\\\")
+            .replace('\'', "\\'")
+            .replace('\n', "\\n");
+        let result = self
+            .evaluate(&format!(
+                r#"
+            (function() {{
+                const searchText = '{}';
+                const nth = {};
+
+                // Find all elements containing the text
+                const matches = [];
+                const walker = document.createTreeWalker(
+                    document.body,
+                    NodeFilter.SHOW_ELEMENT,
+                    null
+                );
+
+                while (walker.nextNode()) {{
+                    const node = walker.currentNode;
+                    // Skip invisible elements
+                    const style = window.getComputedStyle(node);
+                    if (style.display === 'none' || style.visibility === 'hidden') continue;
+
+                    // Check direct text content (text nodes that are direct children)
+                    const directText = Array.from(node.childNodes)
+                        .filter(n => n.nodeType === Node.TEXT_NODE)
+                        .map(n => n.textContent.trim())
+                        .join(' ');
+
+                    if (directText.includes(searchText)) {{
+                        matches.push(node);
+                        continue;
+                    }}
+
+                    // For leaf-ish elements (few children), check full textContent
+                    if (node.children.length <= 2 && node.textContent.includes(searchText)) {{
+                        // Make sure it's not a container with many text nodes
+                        const text = node.textContent.trim();
+                        if (text.length < 200) {{ // Reasonable limit for clickable elements
+                            matches.push(node);
+                        }}
+                    }}
+                }}
+
+                // Remove duplicates (parent/child pairs) - keep the most specific (deepest) element
+                const filtered = matches.filter((el, i) => {{
+                    return !matches.some((other, j) => i !== j && el.contains(other) && el !== other);
+                }});
+
+                if (filtered.length === 0) return {{ found: false, count: 0 }};
+
+                const idx = nth < 0 ? filtered.length + nth : nth;
+                if (idx < 0 || idx >= filtered.length) {{
+                    return {{ found: false, count: filtered.length, index: idx }};
+                }}
+
+                const el = filtered[idx];
+                el.scrollIntoView({{ block: 'center' }});
+                el.click();
+                return {{ found: true, count: filtered.length, tag: el.tagName }};
+            }})()
+            "#,
+                escaped, nth
+            ))
+            .await?;
+
+        if let Some(obj) = result.as_object() {
+            if obj.get("found").and_then(|v| v.as_bool()) == Some(true) {
+                return Ok(());
+            }
+            let count = obj.get("count").and_then(|v| v.as_i64()).unwrap_or(0);
+            if count == 0 {
+                return Err(anyhow!("No element found containing text \"{}\"", text));
+            }
+            let index = obj
+                .get("index")
+                .and_then(|v| v.as_i64())
+                .unwrap_or(nth as i64);
+            return Err(anyhow!(
+                "Index {} out of bounds, found {} element(s) containing \"{}\"",
+                index,
+                count,
+                text
+            ));
+        }
+        Err(anyhow!("No element found containing text \"{}\"", text))
+    }
+
     /// Type text into element using JavaScript
     /// Uses native value setter to work with React controlled inputs
     pub async fn type_into(&self, selector: &str, text: &str) -> Result<()> {
