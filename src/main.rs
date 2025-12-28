@@ -307,6 +307,10 @@ enum InteractSubcommand {
         /// Click at coordinates (x,y)
         #[arg(long, value_parser = parse_coords)]
         coords: Option<(f64, f64)>,
+
+        /// Select nth matching element (0-indexed, -1 for last)
+        #[arg(long, default_value = "0", allow_hyphen_values = true)]
+        nth: i32,
     },
 
     /// Type text into element
@@ -1083,10 +1087,14 @@ async fn run_command(cli: Cli, formatter: &Formatter) -> Result<()> {
 
             // Build action info for session recording
             let (cmd_name, selector, args) = match command {
-                InteractSubcommand::Click { selector, coords } => (
+                InteractSubcommand::Click {
+                    selector,
+                    coords,
+                    nth,
+                } => (
                     "click",
                     selector.clone(),
-                    serde_json::json!({ "coords": coords }),
+                    serde_json::json!({ "coords": coords, "nth": nth }),
                 ),
                 InteractSubcommand::Type { selector, text, .. } => (
                     "type",
@@ -1176,9 +1184,14 @@ async fn run_command(cli: Cli, formatter: &Formatter) -> Result<()> {
             };
 
             let cmd = match command {
-                InteractSubcommand::Click { selector, coords } => InteractCommand::Click {
+                InteractSubcommand::Click {
+                    selector,
+                    coords,
+                    nth,
+                } => InteractCommand::Click {
                     selector: selector.clone(),
                     coords: *coords,
+                    nth: *nth,
                 },
                 InteractSubcommand::Type {
                     selector,
@@ -2562,7 +2575,7 @@ async fn execute_workflow_step(
     match step.action.as_str() {
         "click" => {
             if let Some(sel) = target {
-                cdp.click(sel).await?;
+                cdp.click(sel, 0).await?;
             }
         }
         "type" => {

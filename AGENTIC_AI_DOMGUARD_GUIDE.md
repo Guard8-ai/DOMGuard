@@ -68,7 +68,9 @@ domguard debug throttle network-offline          # Simulate offline
 domguard debug throttle off                      # Disable throttling
 
 # Interact Mode - Control browser
-domguard interact click ".btn"                   # Click element
+domguard interact click ".btn"                   # Click element (first match)
+domguard interact click "button" --nth 1         # Click second button
+domguard interact click "button" --nth -1        # Click last button
 domguard interact click --coords 450,320         # Click coordinates
 domguard interact type "#input" "text"           # Type into element
 domguard interact type --focused "text"          # Type into focused
@@ -337,7 +339,7 @@ domguard interact wait ".dashboard" --visible
 ### Interact Commands
 | Command | Description |
 |---------|-------------|
-| `interact click` | Click element/coordinates |
+| `interact click [--nth N]` | Click element/coordinates (--nth for nth match) |
 | `interact type` | Type text into element |
 | `interact key` | Press key(s) |
 | `interact hover` | Hover over element |

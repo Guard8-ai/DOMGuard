@@ -40,6 +40,7 @@ pub enum InteractCommand {
     Click {
         selector: Option<String>,
         coords: Option<(f64, f64)>,
+        nth: i32,
     },
     Type {
         selector: Option<String>,
@@ -143,9 +144,11 @@ pub async fn run_interact(
     let start = Instant::now();
 
     let result = match command {
-        InteractCommand::Click { selector, coords } => {
-            interact_click(cdp, selector.as_deref(), coords, formatter).await
-        }
+        InteractCommand::Click {
+            selector,
+            coords,
+            nth,
+        } => interact_click(cdp, selector.as_deref(), coords, nth, formatter).await,
         InteractCommand::Type {
             selector,
             text,
@@ -255,6 +258,7 @@ async fn interact_click(
     cdp: &CdpConnection,
     selector: Option<&str>,
     coords: Option<(f64, f64)>,
+    nth: i32,
     formatter: &Formatter,
 ) -> Result<InteractResult> {
     if let Some((x, y)) = coords {
@@ -266,12 +270,21 @@ async fn interact_click(
             details: None,
         })
     } else if let Some(sel) = selector {
-        cdp.click(sel).await?;
-        formatter.success(&format!("Clicked \"{}\"", sel));
+        cdp.click(sel, nth).await?;
+        let nth_info = if nth != 0 {
+            format!(" (nth: {})", nth)
+        } else {
+            String::new()
+        };
+        formatter.success(&format!("Clicked \"{}\"{}", sel, nth_info));
         Ok(InteractResult {
             action: "click".to_string(),
             target: Some(sel.to_string()),
-            details: None,
+            details: if nth != 0 {
+                Some(format!("nth: {}", nth))
+            } else {
+                None
+            },
         })
     } else {
         Err(anyhow::anyhow!("Either selector or --coords required"))

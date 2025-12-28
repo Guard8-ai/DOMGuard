@@ -412,27 +412,47 @@ impl CdpConnection {
     }
 
     /// Click element by selector using JavaScript (more reliable than CDP)
-    pub async fn click(&self, selector: &str) -> Result<()> {
+    /// Supports nth parameter to select nth matching element (0-indexed, -1 for last)
+    pub async fn click(&self, selector: &str, nth: i32) -> Result<()> {
         let escaped = selector.replace('\\', "\\\\").replace('\'', "\\'");
         let result = self
             .evaluate(&format!(
                 r#"
             (function() {{
-                const el = document.querySelector('{}');
-                if (!el) return false;
+                const els = document.querySelectorAll('{}');
+                if (els.length === 0) return {{ found: false, count: 0 }};
+                const idx = {} < 0 ? els.length + {} : {};
+                if (idx < 0 || idx >= els.length) return {{ found: false, count: els.length, index: idx }};
+                const el = els[idx];
                 el.scrollIntoView({{ block: 'center' }});
                 el.click();
-                return true;
+                return {{ found: true }};
             }})()
             "#,
-                escaped
+                escaped, nth, nth, nth
             ))
             .await?;
 
-        if result.as_bool() != Some(true) {
-            return Err(anyhow!("No element matches selector \"{}\"", selector));
+        if let Some(obj) = result.as_object() {
+            if obj.get("found").and_then(|v| v.as_bool()) == Some(true) {
+                return Ok(());
+            }
+            let count = obj.get("count").and_then(|v| v.as_i64()).unwrap_or(0);
+            if count == 0 {
+                return Err(anyhow!("No element matches selector \"{}\"", selector));
+            }
+            let index = obj
+                .get("index")
+                .and_then(|v| v.as_i64())
+                .unwrap_or(nth as i64);
+            return Err(anyhow!(
+                "Index {} out of bounds, found {} element(s) matching \"{}\"",
+                index,
+                count,
+                selector
+            ));
         }
-        Ok(())
+        Err(anyhow!("No element matches selector \"{}\"", selector))
     }
 
     /// Type text into element using JavaScript
