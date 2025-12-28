@@ -1,5 +1,31 @@
 # DOMGuard for AI Agents
 
+## Important: CSS Selectors Only
+
+DOMGuard uses **standard CSS selectors** (what `document.querySelector()` accepts).
+
+**WRONG** (Playwright/Puppeteer syntax):
+```bash
+domguard interact click "text=Generate"           # ❌ Not CSS
+domguard interact click "button:has-text('Go')"   # ❌ Not CSS
+domguard interact type --selector "input" --text "hi"  # ❌ No --selector flag
+```
+
+**CORRECT** (Standard CSS):
+```bash
+domguard interact click "button"                  # ✓ Tag selector
+domguard interact click "#submit-btn"             # ✓ ID selector
+domguard interact click ".btn-primary"            # ✓ Class selector
+domguard interact click "[data-testid='submit']"  # ✓ Attribute selector
+domguard interact click "button[type='submit']"   # ✓ Attribute match
+domguard interact type "textarea" "hello"         # ✓ Positional args
+```
+
+**To click by text content**, use `debug eval`:
+```bash
+domguard debug eval "document.evaluate(\"//button[contains(text(),'Generate')]\", document, null, XPathResult.FIRST_ORDERED_NODE_TYPE, null).singleNodeValue?.click()"
+```
+
 ## Quick Reference
 
 ```bash
@@ -420,4 +446,4 @@ domguard interact wait ".dashboard" --visible
 | `correction wait-stable` | Wait for page to stop changing |
 
 ---
-**Version**: 0.1.0 | **Config**: `.domguard/config.toml`
+**Version**: 0.2.0 | **Config**: `.domguard/config.toml`
