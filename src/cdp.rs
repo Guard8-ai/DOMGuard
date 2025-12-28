@@ -436,6 +436,7 @@ impl CdpConnection {
     }
 
     /// Type text into element using JavaScript
+    /// Uses native value setter to work with React controlled inputs
     pub async fn type_into(&self, selector: &str, text: &str) -> Result<()> {
         let escaped_sel = selector.replace('\\', "\\\\").replace('\'', "\\'");
         let escaped_text = text
@@ -450,7 +451,12 @@ impl CdpConnection {
                 if (!el) return false;
                 el.focus();
                 if (el.tagName === 'INPUT' || el.tagName === 'TEXTAREA') {{
-                    el.value = '{}';
+                    // Use native setter to bypass React's value interception
+                    const proto = el.tagName === 'INPUT'
+                        ? HTMLInputElement.prototype
+                        : HTMLTextAreaElement.prototype;
+                    const nativeSetter = Object.getOwnPropertyDescriptor(proto, 'value').set;
+                    nativeSetter.call(el, '{}');
                     el.dispatchEvent(new Event('input', {{ bubbles: true }}));
                     el.dispatchEvent(new Event('change', {{ bubbles: true }}));
                 }} else if (el.contentEditable === 'true') {{
@@ -470,6 +476,7 @@ impl CdpConnection {
     }
 
     /// Type text into currently focused element using JavaScript
+    /// Uses native value setter to work with React controlled inputs
     pub async fn type_focused(&self, text: &str) -> Result<()> {
         let escaped = text
             .replace('\\', "\\\\")
@@ -481,7 +488,13 @@ impl CdpConnection {
                 const el = document.activeElement;
                 if (el && (el.tagName === 'INPUT' || el.tagName === 'TEXTAREA' || el.contentEditable === 'true')) {{
                     if (el.tagName === 'INPUT' || el.tagName === 'TEXTAREA') {{
-                        el.value += '{}';
+                        // Use native setter to bypass React's value interception
+                        const proto = el.tagName === 'INPUT'
+                            ? HTMLInputElement.prototype
+                            : HTMLTextAreaElement.prototype;
+                        const nativeSetter = Object.getOwnPropertyDescriptor(proto, 'value').set;
+                        const currentValue = el.value || '';
+                        nativeSetter.call(el, currentValue + '{}');
                         el.dispatchEvent(new Event('input', {{ bubbles: true }}));
                     }} else {{
                         document.execCommand('insertText', false, '{}');

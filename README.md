@@ -105,8 +105,12 @@ sudo mv domguard-* /usr/local/bin/domguard
 ### Install from Source
 
 ```bash
-cargo install domguard
+git clone https://github.com/Guard8-ai/DOMGuard.git
+cd DOMGuard
+cargo install --path .
 ```
+
+This installs to `~/.cargo/bin/` which is automatically in your PATH.
 
 ### Get Started
 
@@ -589,12 +593,23 @@ You have access to DOMGuard for browser automation via shell commands.
 
 ## Installation
 
-### From Source
+### From Source (Global Install)
+
+```bash
+git clone https://github.com/Guard8-ai/DOMGuard.git
+cd DOMGuard
+cargo install --path .
+```
+
+This installs to `~/.cargo/bin/` which is automatically in your PATH.
+
+### From Source (Local Build)
 
 ```bash
 git clone https://github.com/Guard8-ai/DOMGuard.git
 cd DOMGuard
 cargo build --release
+# Binary at target/release/domguard
 ```
 
 ### Requirements

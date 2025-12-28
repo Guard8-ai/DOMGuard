@@ -6,7 +6,21 @@
 cargo install domguard
 ```
 
-## From Source
+## From Source (Global Install)
+
+Clone and install globally via Cargo (binary goes to `~/.cargo/bin/`):
+
+```bash
+git clone https://github.com/Guard8-ai/DOMGuard.git
+cd DOMGuard
+cargo install --path .
+```
+
+This installs `domguard` to `~/.cargo/bin/`, which is automatically in your PATH if you have Rust installed.
+
+## From Source (Local Build)
+
+Build without installing globally:
 
 ```bash
 git clone https://github.com/Guard8-ai/DOMGuard.git
