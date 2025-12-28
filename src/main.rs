@@ -32,7 +32,7 @@ use crate::session::SessionRecorder;
 #[derive(Parser)]
 #[command(name = "domguard")]
 #[command(author = "Guard8.ai")]
-#[command(version = "0.1.0")]
+#[command(version = env!("CARGO_PKG_VERSION"))]
 #[command(about = "Local-first Chrome DevTools CLI for AI agents", long_about = None)]
 struct Cli {
     /// Output in JSON format
