@@ -323,7 +323,7 @@ enum InteractSubcommand {
         selector: Option<String>,
 
         /// Text to type
-        text: String,
+        text: Option<String>,
 
         /// Type into currently focused element
         #[arg(long)]

@@ -45,7 +45,7 @@ pub enum InteractCommand {
     },
     Type {
         selector: Option<String>,
-        text: String,
+        text: Option<String>,
         focused: bool,
     },
     Key {
@@ -165,7 +165,27 @@ pub async fn run_interact(
             selector,
             text,
             focused,
-        } => interact_type(cdp, selector.as_deref(), &text, focused, formatter).await,
+        } => {
+            // When --focused is used, the first positional arg (selector) is actually the text
+            let (actual_selector, actual_text) = if focused {
+                (None, selector.as_ref().or(text.as_ref()))
+            } else {
+                (selector.as_ref(), text.as_ref())
+            };
+            match actual_text {
+                Some(t) => {
+                    interact_type(
+                        cdp,
+                        actual_selector.map(|s| s.as_str()),
+                        t,
+                        focused,
+                        formatter,
+                    )
+                    .await
+                }
+                None => Err(anyhow::anyhow!("Text to type is required")),
+            }
+        }
         InteractCommand::Key { keys } => interact_key(cdp, &keys, formatter).await,
         InteractCommand::Hover { selector } => interact_hover(cdp, &selector, formatter).await,
         InteractCommand::Scroll {

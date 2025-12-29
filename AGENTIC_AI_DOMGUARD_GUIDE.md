@@ -452,4 +452,4 @@ domguard interact wait ".dashboard" --visible
 | `correction wait-stable` | Wait for page to stop changing |
 
 ---
-**Version**: 0.4.0 | **Config**: `.domguard/config.toml`
+**Version**: 0.4.1 | **Config**: `.domguard/config.toml`
