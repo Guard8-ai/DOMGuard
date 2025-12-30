@@ -159,4 +159,4 @@ domguard takeover done
 - File uploads validate local file existence
 
 ---
-**Version**: 0.4.1 | **Config**: `.domguard/config.toml`
+**Version**: 0.4.2 | **Config**: `.domguard/config.toml`
