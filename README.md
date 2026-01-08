@@ -621,6 +621,318 @@ cargo build --release
 - Rust 1.70+
 - Chrome/Chromium with `--remote-debugging-port=9222`
 
+## Docker Deployment
+
+Yes, DOMGuard works great in Docker! It's just a CLI - connect Chrome and go.
+
+### Dockerfile
+
+```dockerfile
+FROM rust:1.75-slim as builder
+WORKDIR /app
+RUN apt-get update && apt-get install -y pkg-config libssl-dev
+COPY . .
+RUN cargo build --release
+
+FROM debian:bookworm-slim
+RUN apt-get update && apt-get install -y \
+    chromium \
+    chromium-sandbox \
+    && rm -rf /var/lib/apt/lists/*
+
+COPY --from=builder /app/target/release/domguard /usr/local/bin/
+
+# Start Chrome with remote debugging
+ENV CHROME_BIN=/usr/bin/chromium
+ENTRYPOINT ["domguard"]
+```
+
+### docker-compose.yml
+
+```yaml
+version: '3.8'
+services:
+  chrome:
+    image: browserless/chrome:latest
+    ports:
+      - "9222:9222"
+    environment:
+      - CONNECTION_TIMEOUT=600000
+
+  domguard:
+    build: .
+    depends_on:
+      - chrome
+    environment:
+      - DOMGUARD_HOST=chrome
+      - DOMGUARD_PORT=9222
+    volumes:
+      - ./screenshots:/app/screenshots
+```
+
+### Quick Docker Run
+
+```bash
+# Start headless Chrome
+docker run -d -p 9222:9222 browserless/chrome
+
+# Run DOMGuard commands
+domguard --host localhost --port 9222 debug dom
+```
+
+## Serverless & Cloud
+
+### AWS Lambda / Google Cloud Functions
+
+DOMGuard is a **stateless CLI** - perfect for serverless:
+
+```python
+# lambda_function.py
+import subprocess
+import json
+
+def handler(event, context):
+    # Chrome runs separately (Browserless, or Chrome in another container)
+    cmd = ["domguard", "--json", "--host", "chrome.internal", "debug", "dom"]
+    result = subprocess.run(cmd, capture_output=True, text=True)
+    return json.loads(result.stdout)
+```
+
+### Recommended Cloud Architectures
+
+| Architecture | Use Case | Cost |
+|--------------|----------|------|
+| **Lambda + Browserless** | Occasional scraping | Pay per use |
+| **ECS/Fargate + Chrome** | Continuous automation | ~$30/mo |
+| **EC2 + Chrome** | High volume | ~$50/mo |
+| **Kubernetes + Chrome pool** | Enterprise scale | Variable |
+
+### Browserless.io Integration
+
+```bash
+# Connect to Browserless cloud
+domguard --host chrome.browserless.io --port 443 \
+         --allow-remote debug dom
+```
+
+## Production Scraping
+
+### Best Practices
+
+```bash
+# 1. Use JSON output for parsing
+domguard --json debug dom "#products" | jq '.elements[].text'
+
+# 2. Add waits for dynamic content
+domguard interact wait "[data-loaded='true']" --timeout 10000
+domguard --json debug dom ".product-card"
+
+# 3. Handle pagination
+for page in $(seq 1 10); do
+  domguard interact click ".next-page"
+  domguard interact wait ".products-loaded"
+  domguard --json debug dom ".product" >> products.jsonl
+done
+
+# 4. Screenshot on error for debugging
+domguard interact screenshot --output "debug_$(date +%s).png"
+```
+
+### Rate Limiting
+
+```bash
+# Throttle to avoid detection
+domguard interact throttle-network --latency 100 --download 1000
+
+# Add human-like delays
+sleep 2
+domguard interact click ".next"
+```
+
+### Error Recovery
+
+```bash
+#!/bin/bash
+# retry_scrape.sh
+MAX_RETRIES=3
+for i in $(seq 1 $MAX_RETRIES); do
+  if domguard --json debug dom ".data" > output.json 2>/dev/null; then
+    exit 0
+  fi
+  echo "Retry $i/$MAX_RETRIES..."
+  sleep $((i * 2))
+done
+exit 1
+```
+
+## Scripting & Automation
+
+### Bash Scripting
+
+```bash
+#!/bin/bash
+# scrape_prices.sh
+
+URL="https://example.com/products"
+domguard interact navigate "$URL"
+domguard interact wait ".price"
+
+# Extract all prices
+domguard --json debug dom ".price" | \
+  jq -r '.elements[].text' | \
+  sed 's/[^0-9.]//g' > prices.txt
+
+echo "Found $(wc -l < prices.txt) prices"
+```
+
+### Python Integration
+
+```python
+import subprocess
+import json
+
+def domguard(command: str) -> dict:
+    """Run DOMGuard command and return JSON result."""
+    result = subprocess.run(
+        f"domguard --json {command}",
+        shell=True, capture_output=True, text=True
+    )
+    return json.loads(result.stdout) if result.stdout else {}
+
+# Usage
+domguard("interact navigate 'https://example.com'")
+domguard("interact wait '.content'")
+data = domguard("debug dom '.product'")
+
+for element in data.get("elements", []):
+    print(element["text"])
+```
+
+### Node.js Integration
+
+```javascript
+const { execSync } = require('child_process');
+
+function domguard(command) {
+  const result = execSync(`domguard --json ${command}`, { encoding: 'utf8' });
+  return JSON.parse(result);
+}
+
+// Usage
+domguard(`interact navigate "https://example.com"`);
+domguard(`interact wait ".loaded"`);
+const { elements } = domguard(`debug dom ".item"`);
+elements.forEach(el => console.log(el.text));
+```
+
+## QA & Testing
+
+### Visual Regression Testing
+
+```bash
+#!/bin/bash
+# visual_regression.sh
+
+# Take baseline screenshot
+domguard interact navigate "$TEST_URL"
+domguard interact wait ".app-loaded"
+domguard interact screenshot --output "baseline.png"
+
+# Deploy new version...
+
+# Take comparison screenshot
+domguard interact navigate "$TEST_URL"
+domguard interact wait ".app-loaded"
+domguard interact screenshot --output "current.png"
+
+# Compare with ImageMagick
+compare -metric AE baseline.png current.png diff.png 2>&1
+```
+
+### E2E Test Example
+
+```bash
+#!/bin/bash
+# test_login.sh
+set -e
+
+echo "Testing login flow..."
+
+# Navigate to login
+domguard interact navigate "https://app.example.com/login"
+domguard interact wait "#email"
+
+# Fill form
+domguard interact type "#email" "test@example.com"
+domguard interact type "#password" "testpass123"
+domguard interact click "#submit"
+
+# Verify redirect
+domguard interact wait ".dashboard"
+TITLE=$(domguard --json debug dom "h1" | jq -r '.elements[0].text')
+
+if [[ "$TITLE" == "Welcome" ]]; then
+  echo "✅ Login test passed"
+  exit 0
+else
+  echo "❌ Login test failed: Expected 'Welcome', got '$TITLE'"
+  domguard interact screenshot --output "test_failure.png"
+  exit 1
+fi
+```
+
+### CI/CD Integration
+
+```yaml
+# .github/workflows/e2e.yml
+name: E2E Tests
+on: [push]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    services:
+      chrome:
+        image: browserless/chrome
+        ports:
+          - 9222:9222
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install DOMGuard
+        run: cargo install --path .
+
+      - name: Run E2E tests
+        run: |
+          domguard --host localhost status
+          ./tests/e2e/run_all.sh
+
+      - name: Upload screenshots on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: failure-screenshots
+          path: "*.png"
+```
+
+### Accessibility Testing
+
+```bash
+# Get accessibility tree for WCAG compliance
+domguard debug aria > accessibility.txt
+
+# Check for missing alt text
+domguard --json debug dom "img:not([alt])" | \
+  jq '.count' | \
+  xargs -I {} test {} -eq 0 || echo "Missing alt text!"
+
+# Check heading hierarchy
+domguard --json debug dom "h1,h2,h3,h4,h5,h6" | \
+  jq -r '.elements[].tag' | \
+  awk 'NR>1 && $1-prev>1 {print "Skipped heading level at line " NR} {prev=$1}'
+```
+
 ## License
 
 MIT License - see [LICENSE](LICENSE)
