@@ -46,7 +46,9 @@ impl CdpConnection {
         if !self.config.is_localhost() {
             return Err(anyhow!(
                 "Security: Non-localhost connections are blocked by default.\n\
-                 Use --host flag explicitly to connect to remote Chrome instances."
+                 Remote Chrome connections have security risks (no encryption, no auth).\n\
+                 See SECURITY.md for safe remote connection setup.\n\
+                 Use --allow-remote flag to proceed anyway."
             ));
         }
         Ok(())

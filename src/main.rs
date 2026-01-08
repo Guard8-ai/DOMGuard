@@ -1421,10 +1421,11 @@ fn handle_init(formatter: &Formatter) -> Result<()> {
 
         if let Some(guide_path) = result.guide_path {
             formatter.header("AI Agent Integration");
-            formatter.item(&format!(
-                "{} copied",
-                guide_path.file_name().unwrap().to_string_lossy()
-            ));
+            let filename = guide_path
+                .file_name()
+                .map(|n| n.to_string_lossy().to_string())
+                .unwrap_or_else(|| "guide".to_string());
+            formatter.item(&format!("{} copied", filename));
         }
 
         formatter.header("Next steps");

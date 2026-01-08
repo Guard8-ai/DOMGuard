@@ -520,6 +520,10 @@ Commands:
 - **Credential masking**: Sensitive data (tokens, passwords) masked in output
 - **No data collection**: Everything stays on your machine
 - **Open source**: Full code transparency
+- **CAPTCHA detection**: Warns before automating CAPTCHA-protected pages
+- **Blocked sites**: Configure sites that should never be automated
+
+See [SECURITY.md](SECURITY.md) for the full security policy, remote connection setup, and vulnerability reporting.
 
 ## For AI Agents
 

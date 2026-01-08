@@ -220,7 +220,11 @@ impl TakeoverManager {
 
     /// Save completed session to history
     fn save_to_history(&self, session: &TakeoverSession) -> Result<()> {
-        let history_dir = self.state_file.parent().unwrap().join("takeover_history");
+        let history_dir = self
+            .state_file
+            .parent()
+            .ok_or_else(|| anyhow::anyhow!("Invalid state file path"))?
+            .join("takeover_history");
         std::fs::create_dir_all(&history_dir)?;
 
         let filename = format!("{}.json", session.id);
@@ -233,7 +237,11 @@ impl TakeoverManager {
 
     /// Get takeover history
     pub fn get_history(&self) -> Result<Vec<TakeoverSession>> {
-        let history_dir = self.state_file.parent().unwrap().join("takeover_history");
+        let history_dir = self
+            .state_file
+            .parent()
+            .ok_or_else(|| anyhow::anyhow!("Invalid state file path"))?
+            .join("takeover_history");
 
         if !history_dir.exists() {
             return Ok(vec![]);
