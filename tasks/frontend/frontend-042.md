@@ -1,7 +1,7 @@
 ---
 id: frontend-042
 title: Fix type --focused command argument parsing
-status: in-progress
+status: done
 priority: high
 tags:
 - frontend

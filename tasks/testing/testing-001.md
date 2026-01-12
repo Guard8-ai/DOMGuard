@@ -1,52 +1,48 @@
 ---
 id: testing-001
-title: Write unit tests for config.rs
+title: Add integration tests for core modules
 status: done
-priority: medium
+priority: critical
 tags:
 - testing
-- config
-dependencies:
-- setup-003
-assignee: developer
-created: 2025-12-22T18:08:47.796996789Z
-estimate: ~
-complexity: 2
+- integration
+- cdp
+dependencies: []
+assignee: domguard-team
+created: 2026-01-11T21:00:00Z
+estimate: 8h
+complexity: 8
 area: testing
 ---
 
-# Write unit tests for config.rs
+# Add integration tests for core modules
 
-## Causation Chain
-> Trace the test execution flow: fixture setup → precondition → action →
-assertion → teardown. Check actual test isolation - are tests
-independent or order-dependent?
-
-## Pre-flight Checks
-- [ ] Read dependency task files for implementation context (Session Handoff)
-- [ ] Read test files to verify actual assertions
-- [ ] Check test isolation (no shared mutable state)
-- [ ] Verify fixture setup and teardown completeness
-- [ ] `git log --oneline -10` - Check recent related commits
-
-## Context
-[Why this task exists and what problem it solves]
+## Problem
+7 core modules have 0 tests:
+- `main.rs` (3154 lines) - CLI entry point
+- `cdp.rs` (2281 lines) - Chrome DevTools Protocol
+- `interact.rs` (959 lines) - Browser interaction
+- `debug.rs` (1054 lines) - Debug commands
+- `inspire.rs` (374 lines) - AI inspiration
+- `correction.rs` (450 lines) - Self-correction
+- `takeover.rs` (361 lines) - Session takeover
 
 ## Tasks
-- [ ] [Specific actionable task]
-- [ ] [Another task]
-- [ ] Build + test + run to verify
+- [ ] Create `tests/` directory structure
+- [ ] Add CDP connection tests (mock Chrome)
+- [ ] Add interact command tests
+- [ ] Add debug command tests
+- [ ] Add CLI integration tests
+- [ ] Set up test fixtures for browser state
+- [ ] Add CI step for integration tests
+
+## Files to Create
+- `tests/cdp_tests.rs`
+- `tests/interact_tests.rs`
+- `tests/cli_tests.rs`
 
 ## Acceptance Criteria
-- [ ] [Testable criterion 1]
-- [ ] [Testable criterion 2]
-
-## Notes
-[Technical details, constraints, gotchas]
-
----
-**Session Handoff** (fill when done):
-- Changed: [files/functions modified]
-- Causality: [what triggers what]
-- Verify: [how to test this works]
-- Next: [context for dependent tasks]
+- [ ] Each core module has at least 5 tests
+- [ ] CDP connection error paths tested
+- [ ] CLI argument parsing tested
+- [ ] Tests run in CI pipeline

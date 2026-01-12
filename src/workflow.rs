@@ -421,8 +421,8 @@ fn uuid_simple() -> String {
     use std::time::{SystemTime, UNIX_EPOCH};
     let now = SystemTime::now()
         .duration_since(UNIX_EPOCH)
-        .unwrap()
-        .as_nanos();
+        .map(|d| d.as_nanos())
+        .unwrap_or(0);
     format!("{:x}", now)[..12].to_string()
 }
 

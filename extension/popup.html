@@ -1,0 +1,349 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>DOMGuard Inspector</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      width: 360px;
+      font-family: system-ui, -apple-system, sans-serif;
+      background: #0F172A;
+      color: #E2E8F0;
+      font-size: 13px;
+    }
+
+    .header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 12px 16px;
+      background: #1E293B;
+      border-bottom: 1px solid #334155;
+    }
+
+    .logo {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-weight: 600;
+      font-size: 15px;
+      color: #F8FAFC;
+    }
+
+    .logo svg {
+      width: 24px;
+      height: 24px;
+    }
+
+    .status {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 12px;
+      color: #94A3B8;
+    }
+
+    .status-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: #64748B;
+    }
+
+    .status-dot.active {
+      background: #10B981;
+      box-shadow: 0 0 8px #10B981;
+    }
+
+    .main {
+      padding: 16px;
+    }
+
+    .inspect-btn {
+      width: 100%;
+      padding: 12px;
+      border: none;
+      border-radius: 8px;
+      background: linear-gradient(135deg, #4F46E5 0%, #7C3AED 100%);
+      color: white;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      transition: all 0.2s;
+    }
+
+    .inspect-btn:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 4px 12px rgba(79, 70, 229, 0.4);
+    }
+
+    .inspect-btn.active {
+      background: linear-gradient(135deg, #DC2626 0%, #EF4444 100%);
+    }
+
+    .inspect-btn svg {
+      width: 18px;
+      height: 18px;
+    }
+
+    .element-info {
+      margin-top: 16px;
+      background: #1E293B;
+      border-radius: 8px;
+      overflow: hidden;
+    }
+
+    .element-header {
+      padding: 10px 12px;
+      background: #334155;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-weight: 500;
+    }
+
+    .tag-name {
+      color: #F472B6;
+      font-family: 'SF Mono', Monaco, monospace;
+    }
+
+    .element-id {
+      color: #60A5FA;
+      font-family: 'SF Mono', Monaco, monospace;
+    }
+
+    .element-classes {
+      color: #34D399;
+      font-family: 'SF Mono', Monaco, monospace;
+      font-size: 12px;
+    }
+
+    .section {
+      padding: 12px;
+      border-top: 1px solid #334155;
+    }
+
+    .section-title {
+      font-size: 11px;
+      font-weight: 600;
+      color: #64748B;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin-bottom: 8px;
+    }
+
+    .selector-box {
+      background: #0F172A;
+      border: 1px solid #334155;
+      border-radius: 6px;
+      padding: 10px;
+      font-family: 'SF Mono', Monaco, monospace;
+      font-size: 12px;
+      color: #A5B4FC;
+      word-break: break-all;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .selector-box:hover {
+      border-color: #4F46E5;
+      background: #1E293B;
+    }
+
+    .command-box {
+      background: #0F172A;
+      border: 1px solid #334155;
+      border-radius: 6px;
+      padding: 10px;
+      font-family: 'SF Mono', Monaco, monospace;
+      font-size: 11px;
+      color: #10B981;
+      word-break: break-all;
+      position: relative;
+    }
+
+    .copy-btn {
+      position: absolute;
+      top: 6px;
+      right: 6px;
+      padding: 4px 8px;
+      background: #334155;
+      border: none;
+      border-radius: 4px;
+      color: #94A3B8;
+      font-size: 11px;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .copy-btn:hover {
+      background: #4F46E5;
+      color: white;
+    }
+
+    .copy-btn.copied {
+      background: #10B981;
+      color: white;
+    }
+
+    .attrs-list {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+    }
+
+    .attr-tag {
+      padding: 4px 8px;
+      background: #334155;
+      border-radius: 4px;
+      font-size: 11px;
+    }
+
+    .attr-name {
+      color: #F59E0B;
+    }
+
+    .attr-value {
+      color: #94A3B8;
+    }
+
+    .empty-state {
+      text-align: center;
+      padding: 32px 16px;
+      color: #64748B;
+    }
+
+    .empty-state svg {
+      width: 48px;
+      height: 48px;
+      margin-bottom: 12px;
+      opacity: 0.5;
+    }
+
+    .empty-state p {
+      margin-top: 8px;
+      font-size: 12px;
+    }
+
+    .tip {
+      margin-top: 16px;
+      padding: 10px 12px;
+      background: #1E293B;
+      border-radius: 8px;
+      border-left: 3px solid #4F46E5;
+      font-size: 12px;
+      color: #94A3B8;
+    }
+
+    .tip strong {
+      color: #E2E8F0;
+    }
+
+    .footer {
+      padding: 12px 16px;
+      background: #1E293B;
+      border-top: 1px solid #334155;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .footer-link {
+      color: #60A5FA;
+      text-decoration: none;
+      font-size: 12px;
+    }
+
+    .footer-link:hover {
+      text-decoration: underline;
+    }
+
+    .version {
+      color: #475569;
+      font-size: 11px;
+    }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <div class="logo">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+      </svg>
+      DOMGuard
+    </div>
+    <div class="status">
+      <div class="status-dot" id="statusDot"></div>
+      <span id="statusText">Ready</span>
+    </div>
+  </div>
+
+  <div class="main">
+    <button class="inspect-btn" id="inspectBtn">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <circle cx="11" cy="11" r="8"/>
+        <path d="M21 21l-4.35-4.35"/>
+      </svg>
+      <span id="inspectBtnText">Start Inspecting</span>
+    </button>
+
+    <div id="elementInfo" style="display: none;">
+      <div class="element-info">
+        <div class="element-header">
+          <span class="tag-name" id="tagName"></span>
+          <span class="element-id" id="elementId"></span>
+        </div>
+        <div class="element-classes" id="elementClasses" style="padding: 8px 12px; display: none;"></div>
+
+        <div class="section">
+          <div class="section-title">CSS Selector</div>
+          <div class="selector-box" id="selectorBox" title="Click to copy"></div>
+        </div>
+
+        <div class="section">
+          <div class="section-title">DOMGuard Command</div>
+          <div class="command-box" id="commandBox">
+            <button class="copy-btn" id="copyBtn">Copy</button>
+            <span id="commandText"></span>
+          </div>
+        </div>
+
+        <div class="section" id="attrsSection" style="display: none;">
+          <div class="section-title">Attributes</div>
+          <div class="attrs-list" id="attrsList"></div>
+        </div>
+      </div>
+    </div>
+
+    <div id="emptyState" class="empty-state">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+        <path d="M15 15l6 6m-11-4a7 7 0 110-14 7 7 0 010 14z"/>
+      </svg>
+      <strong>No element selected</strong>
+      <p>Click "Start Inspecting" and hover over elements to see their selectors.</p>
+    </div>
+
+    <div class="tip">
+      <strong>Tip:</strong> Press <kbd>ESC</kbd> to stop inspecting. Click any element to copy its selector.
+    </div>
+  </div>
+
+  <div class="footer">
+    <a href="https://github.com/Guard8-ai/DOMGuard" target="_blank" class="footer-link">Documentation</a>
+    <span class="version">v1.0.0</span>
+  </div>
+
+  <script src="popup.js"></script>
+</body>
+</html>

@@ -93,8 +93,13 @@ domguard interact mouse-up left                  # Release mouse button
 # Session Recording
 domguard session start --name "My Task"          # Start recording
 domguard session stop                            # Stop and save
+domguard session stop --cleanup                  # Stop and delete screenshots
 domguard session list                            # List saved sessions
 domguard session replay <id>                     # Replay session
+
+# Cleanup
+domguard interact cleanup                        # Delete all screenshots
+domguard interact cleanup --dry-run              # Preview what would be deleted
 
 # User Takeover (for CAPTCHA, 2FA, etc.)
 domguard takeover request captcha                # Request user help
@@ -158,5 +163,13 @@ domguard takeover done
 - Credentials from `interact type` are not logged
 - File uploads validate local file existence
 
+## Config Options
+
+```toml
+# .domguard/config.toml
+[defaults]
+auto_cleanup_screenshots = true   # Auto-delete screenshots on session stop
+```
+
 ---
-**Version**: 0.4.2 | **Config**: `.domguard/config.toml`
+**Version**: 1.0.1 | **Config**: `.domguard/config.toml`

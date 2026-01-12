@@ -1,54 +1,40 @@
 ---
 id: backend-001
-title: Implement cdp.rs - Chrome DevTools Protocol connection
+title: Fix unsafe unwrap() calls on system time
 status: done
 priority: high
 tags:
-- backend
-- cdp
-- websocket
-- chrome
-dependencies:
-- setup-003
-assignee: developer
-created: 2025-12-22T18:06:58.419774955Z
-estimate: ~
-complexity: 5
+- error-handling
+- safety
+dependencies: []
+assignee: domguard-team
+created: 2026-01-11T21:00:00Z
+estimate: 1h
+complexity: 2
 area: backend
 ---
 
-# Implement cdp.rs - Chrome DevTools Protocol connection
+# Fix unsafe unwrap() calls on system time
 
-## Causation Chain
-> Trace the service orchestration: entry point → dependency injection →
-business logic → side effects → return. Verify actual error propagation
-paths in the codebase.
+## Problem
+6 unsafe `unwrap()` calls on system time can crash if clock is before UNIX epoch.
 
-## Pre-flight Checks
-- [ ] Read dependency task files for implementation context (Session Handoff)
-- [ ] `grep -r "impl.*Service\|fn.*service" src/` - Find service definitions
-- [ ] Check actual dependency injection patterns
-- [ ] Verify error propagation through service layers
-- [ ] `git log --oneline -10` - Check recent related commits
-
-## Context
-[Why this task exists and what problem it solves]
+Locations:
+- `interact.rs:501` - screenshot naming
+- `interact.rs:780` - PDF export
+- `interact.rs:927` - snapshot export
+- `debug.rs:737` - debug timestamps
 
 ## Tasks
-- [ ] [Specific actionable task]
-- [ ] [Another task]
-- [ ] Build + test + run to verify
+- [ ] Create helper function for safe timestamp generation
+- [ ] Update all 6 locations to use safe pattern
+- [ ] Add test for timestamp generation
+
+## Files to Modify
+- `src/interact.rs` (lines 501, 780, 927)
+- `src/debug.rs` (line 737)
 
 ## Acceptance Criteria
-- [ ] [Testable criterion 1]
-- [ ] [Testable criterion 2]
-
-## Notes
-[Technical details, constraints, gotchas]
-
----
-**Session Handoff** (fill when done):
-- Changed: [files/functions modified]
-- Causality: [what triggers what]
-- Verify: [how to test this works]
-- Next: [context for dependent tasks]
+- [ ] No unwrap() on system time in production code
+- [ ] All timestamp operations have fallback
+- [ ] Clippy passes with no warnings

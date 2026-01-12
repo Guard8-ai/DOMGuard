@@ -1,7 +1,7 @@
 ---
 id: frontend-041
 title: Add --text option for clicking elements by visible text content
-status: in-progress
+status: done
 priority: high
 tags:
 - frontend

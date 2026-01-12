@@ -11,6 +11,14 @@ use crate::cdp::CdpConnection;
 use crate::config::Config;
 use crate::output::{CommandResult, Formatter};
 
+/// Get current timestamp in seconds, with fallback to 0 if system clock is before UNIX epoch
+fn safe_timestamp() -> u64 {
+    std::time::SystemTime::now()
+        .duration_since(std::time::UNIX_EPOCH)
+        .map(|d| d.as_secs())
+        .unwrap_or(0)
+}
+
 /// Result data for interact commands
 #[derive(Debug, Serialize)]
 pub struct InteractResult {
@@ -496,10 +504,7 @@ async fn interact_screenshot(
             .join("screenshots")
             .join(format!(
                 "screenshot_{}.png",
-                std::time::SystemTime::now()
-                    .duration_since(std::time::UNIX_EPOCH)
-                    .unwrap()
-                    .as_secs()
+                safe_timestamp()
             ))
     });
 
@@ -775,10 +780,7 @@ async fn interact_pdf(
             .join("screenshots")
             .join(format!(
                 "page_{}.pdf",
-                std::time::SystemTime::now()
-                    .duration_since(std::time::UNIX_EPOCH)
-                    .unwrap()
-                    .as_secs()
+                safe_timestamp()
             ))
     });
 
@@ -922,10 +924,7 @@ async fn interact_screenshot_region(
             .join("screenshots")
             .join(format!(
                 "region_{}.png",
-                std::time::SystemTime::now()
-                    .duration_since(std::time::UNIX_EPOCH)
-                    .unwrap()
-                    .as_secs()
+                safe_timestamp()
             ))
     });
 
@@ -956,4 +955,73 @@ async fn interact_wait_duration(duration_ms: u64, formatter: &Formatter) -> Resu
         target: Some(format!("{}ms", duration_ms)),
         details: None,
     })
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_safe_timestamp() {
+        let ts = safe_timestamp();
+        // Should be a reasonable Unix timestamp (after 2020)
+        assert!(ts > 1577836800, "timestamp should be after 2020");
+    }
+
+    #[test]
+    fn test_interact_result_display() {
+        let result = InteractResult {
+            action: "click".to_string(),
+            target: Some("#button".to_string()),
+            details: Some("clicked".to_string()),
+        };
+        let display = format!("{}", result);
+        assert!(display.contains("click"));
+        assert!(display.contains("#button"));
+        assert!(display.contains("clicked"));
+    }
+
+    #[test]
+    fn test_interact_result_display_minimal() {
+        let result = InteractResult {
+            action: "navigate".to_string(),
+            target: None,
+            details: None,
+        };
+        let display = format!("{}", result);
+        assert_eq!(display, "navigate");
+    }
+
+    #[test]
+    fn test_interact_result_serialize() {
+        let result = InteractResult {
+            action: "type".to_string(),
+            target: Some("input".to_string()),
+            details: None,
+        };
+        let json = serde_json::to_string(&result).unwrap();
+        assert!(json.contains("\"action\":\"type\""));
+        assert!(json.contains("\"target\":\"input\""));
+        // details should be skipped when None
+        assert!(!json.contains("details"));
+    }
+
+    #[test]
+    fn test_interact_command_variants() {
+        // Test that all command variants can be created
+        let _click = InteractCommand::Click {
+            selector: Some("#btn".to_string()),
+            coords: None,
+            nth: 0,
+            text: None,
+        };
+        let _type = InteractCommand::Type {
+            selector: Some("input".to_string()),
+            text: Some("hello".to_string()),
+            focused: false,
+        };
+        let _nav = InteractCommand::Navigate {
+            url: "https://example.com".to_string(),
+        };
+    }
 }

@@ -1,51 +1,41 @@
 ---
 id: docs-001
-title: Create README.md with feature comparison vs competitors
+title: Add error codes and troubleshooting documentation
 status: done
-priority: high
+priority: medium
 tags:
-- docs
-dependencies:
-- setup-001
-assignee: developer
-created: 2025-12-23T13:49:21.580876243Z
-estimate: 2h
-complexity: 3
+- documentation
+- errors
+dependencies: []
+assignee: domguard-team
+created: 2026-01-11T21:00:00Z
+estimate: 3h
+complexity: 4
 area: docs
 ---
 
-# Create README.md with feature comparison vs competitors
+# Add error codes and troubleshooting documentation
 
-## Causation Chain
-> Trace the documentation chain: code signature → docstring → generated
-docs → published output. Check actual code-to-docs sync status - are
-examples runnable?
-
-## Pre-flight Checks
-- [ ] Read dependency task files for implementation context (Session Handoff)
-- [ ] Compare doc examples with actual API signatures
-- [ ] Check that code snippets are runnable
-- [ ] Verify cross-references are valid
-- [ ] `git log --oneline -10` - Check recent related commits
-
-## Context
-[Why this task exists and what problem it solves]
+## Problem
+Missing documentation:
+- No error codes reference
+- No troubleshooting for CDP connection failures (cdp.rs has 2281 lines)
+- No workflow syntax documentation
+- No session file format specification
 
 ## Tasks
-- [ ] [Specific actionable task]
-- [ ] [Another task]
-- [ ] Build + test + run to verify
+- [ ] Create error codes reference document
+- [ ] Document all CDP error scenarios and solutions
+- [ ] Create workflow YAML/TOML syntax documentation
+- [ ] Document session JSON file format
+
+## Files to Create
+- `docs/reference/error-codes.md`
+- `docs/troubleshooting/cdp-connection.md`
+- `docs/reference/workflow-syntax.md`
+- `docs/reference/session-format.md`
 
 ## Acceptance Criteria
-- [ ] [Testable criterion 1]
-- [ ] [Testable criterion 2]
-
-## Notes
-[Technical details, constraints, gotchas]
-
----
-**Session Handoff** (fill when done):
-- Changed: [files/functions modified]
-- Causality: [what triggers what]
-- Verify: [how to test this works]
-- Next: [context for dependent tasks]
+- [ ] All known error messages documented
+- [ ] CDP troubleshooting covers common failures
+- [ ] ReadTheDocs builds successfully

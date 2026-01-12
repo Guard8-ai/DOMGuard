@@ -1,0 +1,79 @@
+/* DOMGuard Inspector - Content Script Styles */
+
+/* Highlight overlay */
+#domguard-highlight-overlay {
+  position: fixed !important;
+  pointer-events: none !important;
+  z-index: 2147483647 !important;
+  border: 2px solid #4F46E5 !important;
+  background: rgba(79, 70, 229, 0.1) !important;
+  transition: all 0.05s ease-out !important;
+  box-shadow: 0 0 0 1px rgba(79, 70, 229, 0.3) !important;
+}
+
+/* Copied notification animation */
+@keyframes domguard-fadeout {
+  0% {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+  }
+  70% {
+    opacity: 1;
+    transform: translateX(-50%) translateY(-10px);
+  }
+  100% {
+    opacity: 0;
+    transform: translateX(-50%) translateY(-20px);
+  }
+}
+
+#domguard-copied-notification {
+  position: fixed !important;
+  z-index: 2147483647 !important;
+  background: #10B981 !important;
+  color: white !important;
+  padding: 8px 16px !important;
+  border-radius: 6px !important;
+  font-family: system-ui, -apple-system, sans-serif !important;
+  font-size: 14px !important;
+  font-weight: 500 !important;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15) !important;
+  pointer-events: none !important;
+}
+
+/* Element info tooltip (optional hover info) */
+#domguard-tooltip {
+  position: fixed !important;
+  z-index: 2147483647 !important;
+  background: #1E293B !important;
+  color: #E2E8F0 !important;
+  padding: 8px 12px !important;
+  border-radius: 6px !important;
+  font-family: 'SF Mono', Monaco, 'Cascadia Code', monospace !important;
+  font-size: 12px !important;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.25) !important;
+  pointer-events: none !important;
+  max-width: 400px !important;
+  word-break: break-all !important;
+  border: 1px solid #334155 !important;
+}
+
+#domguard-tooltip .tag {
+  color: #F472B6 !important;
+}
+
+#domguard-tooltip .id {
+  color: #60A5FA !important;
+}
+
+#domguard-tooltip .class {
+  color: #34D399 !important;
+}
+
+/* Prevent interference with page styles */
+#domguard-highlight-overlay,
+#domguard-copied-notification,
+#domguard-tooltip {
+  all: initial !important;
+  font-family: system-ui, -apple-system, sans-serif !important;
+}

@@ -7,6 +7,69 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [1.0.1] - 2026-01-12
+
+### Added
+- `interact cleanup` command to delete screenshot files
+- `session stop --cleanup` flag to auto-delete screenshots
+- `auto_cleanup_screenshots` config option
+- Chrome extension for visual element inspection (pending Chrome Web Store approval)
+- Comprehensive documentation for error codes, CDP troubleshooting, workflow syntax, and session format
+
+### Documentation
+- Added `docs/reference/error-codes.md`
+- Added `docs/troubleshooting/cdp-connection.md`
+- Added `docs/reference/workflow-syntax.md`
+- Added `docs/reference/session-format.md`
+
+## [1.0.0] - 2026-01-08
+
+### Added
+- Production-ready release
+- Security hardening for public release
+- Comprehensive documentation
+
+### Changed
+- Stabilized all APIs
+- Finalized CLI interface
+
+## [0.4.2] - 2025-12-30
+
+### Changed
+- Condensed AI guide from 456 to 162 lines
+- Removed duplicate command reference tables
+
+### Fixed
+- Version bump to match tag
+
+## [0.4.1] - 2025-12-29
+
+### Fixed
+- `type --focused` argument parsing - first positional arg now correctly treated as text when `--focused` is used
+- Example: `domguard interact type --focused "hello"` now works correctly
+
+## [0.4.0] - 2025-12-28
+
+### Added
+- `--text` option for `interact click` to click elements by visible text content
+- Useful for dynamic dropdowns (Radix/Shadcn) where selectors are unreliable
+- Examples:
+  - `domguard interact click --text "Generate Strategy"`
+  - `domguard interact click --text "MSFT" --nth 1`
+
+### Changed
+- `click_by_text()` method in CDP using TreeWalker for robust text matching
+
+## [0.3.0] - 2025-12-28
+
+### Added
+- `--nth` option for `interact click` to select nth matching element
+- Support for negative indices (`--nth -1` for last element)
+- React controlled input fix using native value setter
+
+### Fixed
+- Type command now works correctly with React controlled inputs
+
 ## [0.1.0] - 2025-01-XX
 
 ### Added
@@ -94,5 +157,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 - `--json` flag for programmatic output
 - Human-readable default output
 
-[Unreleased]: https://github.com/Guard8-ai/DOMGuard/compare/v0.1.0...HEAD
+[Unreleased]: https://github.com/Guard8-ai/DOMGuard/compare/v1.0.1...HEAD
+[1.0.1]: https://github.com/Guard8-ai/DOMGuard/compare/v1.0.0...v1.0.1
+[1.0.0]: https://github.com/Guard8-ai/DOMGuard/compare/v0.4.2...v1.0.0
+[0.4.2]: https://github.com/Guard8-ai/DOMGuard/compare/v0.4.1...v0.4.2
+[0.4.1]: https://github.com/Guard8-ai/DOMGuard/compare/v0.4.0...v0.4.1
+[0.4.0]: https://github.com/Guard8-ai/DOMGuard/compare/v0.3.0...v0.4.0
+[0.3.0]: https://github.com/Guard8-ai/DOMGuard/compare/v0.1.0...v0.3.0
 [0.1.0]: https://github.com/Guard8-ai/DOMGuard/releases/tag/v0.1.0

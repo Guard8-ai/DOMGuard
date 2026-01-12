@@ -556,6 +556,13 @@ enum InteractSubcommand {
         /// Duration in milliseconds
         duration: u64,
     },
+
+    /// Clean up screenshot files
+    Cleanup {
+        /// Only show what would be deleted (dry run)
+        #[arg(long)]
+        dry_run: bool,
+    },
 }
 
 #[derive(Subcommand)]
@@ -568,7 +575,11 @@ enum SessionSubcommand {
     },
 
     /// Stop the current recording
-    Stop,
+    Stop {
+        /// Delete screenshots after stopping
+        #[arg(long)]
+        cleanup: bool,
+    },
 
     /// Pause the current recording
     Pause,
@@ -1087,6 +1098,72 @@ async fn run_command(cli: Cli, formatter: &Formatter) -> Result<()> {
             debug::run_debug(&cdp, cmd, formatter).await
         }
         Commands::Interact { command } => {
+            // Handle cleanup command separately (doesn't need CDP)
+            if let InteractSubcommand::Cleanup { dry_run } = command {
+                let screenshots_dir = Config::find_domguard_dir()
+                    .unwrap_or_else(Config::domguard_dir)
+                    .join("screenshots");
+
+                if !screenshots_dir.exists() {
+                    if formatter.is_json() {
+                        formatter.output_json(&serde_json::json!({
+                            "success": true,
+                            "deleted": 0,
+                            "message": "No screenshots directory found"
+                        }));
+                    } else {
+                        println!("No screenshots directory found");
+                    }
+                    return Ok(());
+                }
+
+                let mut deleted = 0;
+                let mut files_to_delete = Vec::new();
+
+                for entry in std::fs::read_dir(&screenshots_dir)? {
+                    let entry = entry?;
+                    let path = entry.path();
+                    if path.is_file() {
+                        if let Some(ext) = path.extension() {
+                            if ext == "png" || ext == "pdf" || ext == "html" {
+                                files_to_delete.push(path);
+                            }
+                        }
+                    }
+                }
+
+                if *dry_run {
+                    if formatter.is_json() {
+                        formatter.output_json(&serde_json::json!({
+                            "dry_run": true,
+                            "would_delete": files_to_delete.len(),
+                            "files": files_to_delete.iter().map(|p| p.display().to_string()).collect::<Vec<_>>()
+                        }));
+                    } else {
+                        println!("Would delete {} files:", files_to_delete.len());
+                        for path in &files_to_delete {
+                            println!("  {}", path.display());
+                        }
+                    }
+                } else {
+                    for path in &files_to_delete {
+                        std::fs::remove_file(path)?;
+                        deleted += 1;
+                    }
+
+                    if formatter.is_json() {
+                        formatter.output_json(&serde_json::json!({
+                            "success": true,
+                            "deleted": deleted
+                        }));
+                    } else {
+                        println!("Deleted {} screenshot files", deleted);
+                    }
+                }
+
+                return Ok(());
+            }
+
             cdp.connect().await?;
 
             // Build action info for session recording
@@ -1186,6 +1263,7 @@ async fn run_command(cli: Cli, formatter: &Formatter) -> Result<()> {
                     None,
                     serde_json::json!({ "duration": duration }),
                 ),
+                InteractSubcommand::Cleanup { .. } => unreachable!("handled above"),
             };
 
             let cmd = match command {
@@ -1323,6 +1401,7 @@ async fn run_command(cli: Cli, formatter: &Formatter) -> Result<()> {
                 InteractSubcommand::WaitDuration { duration } => InteractCommand::WaitDuration {
                     duration_ms: *duration,
                 },
+                InteractSubcommand::Cleanup { .. } => unreachable!("handled above"),
             };
 
             // Build action for recording
@@ -1515,7 +1594,7 @@ async fn handle_status(cdp: &mut CdpConnection, formatter: &Formatter) -> Result
 
 async fn handle_session(
     cdp: &mut CdpConnection,
-    _config: &Config,
+    config: &Config,
     command: &SessionSubcommand,
     formatter: &Formatter,
 ) -> Result<()> {
@@ -1549,7 +1628,7 @@ async fn handle_session(
             }
         }
 
-        SessionSubcommand::Stop => {
+        SessionSubcommand::Stop { cleanup } => {
             if let Some(session) = recorder.stop()? {
                 if formatter.is_json() {
                     formatter.output_json(&session.summary());
@@ -1557,6 +1636,33 @@ async fn handle_session(
                     println!("{}", "Session recording stopped".green().bold());
                     println!();
                     print_session_summary(&session.summary(), formatter);
+                }
+
+                // Cleanup screenshots if requested or if auto_cleanup is enabled
+                let should_cleanup = *cleanup || config.defaults.auto_cleanup_screenshots;
+                if should_cleanup {
+                    let screenshots_dir = Config::find_domguard_dir()
+                        .unwrap_or_else(Config::domguard_dir)
+                        .join("screenshots");
+
+                    if screenshots_dir.exists() {
+                        let mut deleted = 0;
+                        for entry in std::fs::read_dir(&screenshots_dir)? {
+                            let entry = entry?;
+                            let path = entry.path();
+                            if path.is_file() {
+                                if let Some(ext) = path.extension() {
+                                    if ext == "png" || ext == "pdf" || ext == "html" {
+                                        std::fs::remove_file(&path)?;
+                                        deleted += 1;
+                                    }
+                                }
+                            }
+                        }
+                        if !formatter.is_json() && deleted > 0 {
+                            println!("Cleaned up {} screenshot files", deleted);
+                        }
+                    }
                 }
             } else if formatter.is_json() {
                 formatter.output_json(&serde_json::json!({

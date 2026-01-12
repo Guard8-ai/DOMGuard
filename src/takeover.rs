@@ -272,8 +272,8 @@ fn generate_id() -> String {
     use std::time::{SystemTime, UNIX_EPOCH};
     let now = SystemTime::now()
         .duration_since(UNIX_EPOCH)
-        .unwrap()
-        .as_nanos();
+        .map(|d| d.as_nanos())
+        .unwrap_or(0);
     format!("takeover-{:x}", now)[..20].to_string()
 }
 

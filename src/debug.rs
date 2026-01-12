@@ -8,6 +8,14 @@ use serde::Serialize;
 use crate::cdp::CdpConnection;
 use crate::output::{mask_sensitive, AriaNode, ConsoleMessage, DomNode, Formatter, NetworkRequest};
 
+/// Get current timestamp in seconds, with fallback to 0 if system clock is before UNIX epoch
+fn safe_timestamp() -> u64 {
+    std::time::SystemTime::now()
+        .duration_since(std::time::UNIX_EPOCH)
+        .map(|d| d.as_secs())
+        .unwrap_or(0)
+}
+
 /// Tab action types
 #[derive(Debug, Clone)]
 pub enum TabCommand {
@@ -732,10 +740,7 @@ async fn debug_snapshot(
     let output_path = output.unwrap_or_else(|| {
         std::path::PathBuf::from(format!(
             "snapshot_{}.html",
-            std::time::SystemTime::now()
-                .duration_since(std::time::UNIX_EPOCH)
-                .unwrap()
-                .as_secs()
+            safe_timestamp()
         ))
     });
 
@@ -1051,4 +1056,57 @@ async fn debug_captcha(cdp: &CdpConnection, formatter: &Formatter) -> Result<()>
     }
 
     Ok(())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_safe_timestamp() {
+        let ts = safe_timestamp();
+        // Should be a reasonable Unix timestamp (after 2020)
+        assert!(ts > 1577836800, "timestamp should be after 2020");
+    }
+
+    #[test]
+    fn test_tab_command_variants() {
+        let list = TabCommand::List;
+        let new = TabCommand::New { url: Some("https://example.com".to_string()) };
+        let switch = TabCommand::Switch { id: "abc123".to_string() };
+        let close = TabCommand::Close { id: "def456".to_string() };
+
+        // Test debug formatting
+        assert!(format!("{:?}", list).contains("List"));
+        assert!(format!("{:?}", new).contains("example.com"));
+        assert!(format!("{:?}", switch).contains("abc123"));
+        assert!(format!("{:?}", close).contains("def456"));
+    }
+
+    #[test]
+    fn test_throttle_mode_variants() {
+        let slow_3g = ThrottleMode::NetworkSlow3g;
+        let net_3g = ThrottleMode::Network3g;
+        let offline = ThrottleMode::NetworkOffline;
+        let off = ThrottleMode::Off;
+
+        // Verify all variants exist
+        assert!(format!("{:?}", slow_3g).contains("NetworkSlow3g"));
+        assert!(format!("{:?}", net_3g).contains("Network3g"));
+        assert!(format!("{:?}", offline).contains("NetworkOffline"));
+        assert!(format!("{:?}", off).contains("Off"));
+    }
+
+    #[test]
+    fn test_debug_command_variants() {
+        let dom = DebugCommand::Dom { selector: Some("body".to_string()) };
+        let console = DebugCommand::Console { follow: false, filter: None };
+        let network = DebugCommand::Network { filter: None };
+        let storage = DebugCommand::Storage;
+
+        assert!(format!("{:?}", dom).contains("Dom"));
+        assert!(format!("{:?}", console).contains("Console"));
+        assert!(format!("{:?}", network).contains("Network"));
+        assert!(format!("{:?}", storage).contains("Storage"));
+    }
 }

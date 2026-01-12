@@ -372,3 +372,68 @@ async fn extract_design(
         animations,
     })
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_design_data_serialize() {
+        let data = DesignData {
+            url: "https://example.com".to_string(),
+            colors: vec![],
+            typography: vec![],
+            spacing: SpacingInfo::default(),
+            layout: LayoutInfo::default(),
+            animations: AnimationInfo::default(),
+        };
+
+        let json = serde_json::to_string(&data).unwrap();
+        assert!(json.contains("example.com"));
+        assert!(json.contains("colors"));
+        assert!(json.contains("typography"));
+    }
+
+    #[test]
+    fn test_design_data_with_content() {
+        let data = DesignData {
+            url: "https://test.com".to_string(),
+            colors: vec![ColorInfo {
+                hex: "#ff0000".to_string(),
+                usage: "background".to_string(),
+                count: 5,
+            }],
+            typography: vec![TypographyInfo {
+                font_family: "Arial".to_string(),
+                font_size: "16px".to_string(),
+                font_weight: "400".to_string(),
+                line_height: "1.5".to_string(),
+                usage: "body".to_string(),
+            }],
+            spacing: SpacingInfo {
+                padding_values: vec!["8px".to_string()],
+                margin_values: vec!["16px".to_string()],
+                gap_values: vec!["12px".to_string()],
+            },
+            layout: LayoutInfo {
+                flex_containers: 1,
+                grid_containers: 0,
+                flex_directions: vec!["row".to_string()],
+                grid_templates: vec![],
+                justify_content: vec!["center".to_string()],
+                align_items: vec!["center".to_string()],
+            },
+            animations: AnimationInfo {
+                timing_functions: vec!["ease".to_string()],
+                durations: vec!["0.3s".to_string()],
+                transitions: vec!["all 0.3s ease".to_string()],
+            },
+        };
+
+        let json = serde_json::to_string(&data).unwrap();
+        assert!(json.contains("#ff0000"));
+        assert!(json.contains("Arial"));
+        assert!(json.contains("row"));
+        assert!(json.contains("ease"));
+    }
+}

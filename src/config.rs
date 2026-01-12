@@ -46,6 +46,9 @@ pub struct DefaultsConfig {
     /// Screenshot format (default: png)
     #[serde(default = "default_screenshot_format")]
     pub screenshot_format: String,
+    /// Automatically cleanup screenshots on session stop (default: false)
+    #[serde(default)]
+    pub auto_cleanup_screenshots: bool,
 }
 
 impl Default for DefaultsConfig {
@@ -53,6 +56,7 @@ impl Default for DefaultsConfig {
         Self {
             timeout_ms: default_timeout(),
             screenshot_format: default_screenshot_format(),
+            auto_cleanup_screenshots: false,
         }
     }
 }
