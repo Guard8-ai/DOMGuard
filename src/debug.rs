@@ -737,12 +737,8 @@ async fn debug_snapshot(
 ) -> Result<()> {
     let html = cdp.get_full_dom_snapshot().await?;
 
-    let output_path = output.unwrap_or_else(|| {
-        std::path::PathBuf::from(format!(
-            "snapshot_{}.html",
-            safe_timestamp()
-        ))
-    });
+    let output_path = output
+        .unwrap_or_else(|| std::path::PathBuf::from(format!("snapshot_{}.html", safe_timestamp())));
 
     std::fs::write(&output_path, &html)?;
 
@@ -1072,9 +1068,15 @@ mod tests {
     #[test]
     fn test_tab_command_variants() {
         let list = TabCommand::List;
-        let new = TabCommand::New { url: Some("https://example.com".to_string()) };
-        let switch = TabCommand::Switch { id: "abc123".to_string() };
-        let close = TabCommand::Close { id: "def456".to_string() };
+        let new = TabCommand::New {
+            url: Some("https://example.com".to_string()),
+        };
+        let switch = TabCommand::Switch {
+            id: "abc123".to_string(),
+        };
+        let close = TabCommand::Close {
+            id: "def456".to_string(),
+        };
 
         // Test debug formatting
         assert!(format!("{:?}", list).contains("List"));
@@ -1099,8 +1101,13 @@ mod tests {
 
     #[test]
     fn test_debug_command_variants() {
-        let dom = DebugCommand::Dom { selector: Some("body".to_string()) };
-        let console = DebugCommand::Console { follow: false, filter: None };
+        let dom = DebugCommand::Dom {
+            selector: Some("body".to_string()),
+        };
+        let console = DebugCommand::Console {
+            follow: false,
+            filter: None,
+        };
         let network = DebugCommand::Network { filter: None };
         let storage = DebugCommand::Storage;
 

@@ -103,10 +103,7 @@ fn test_security_help() {
 #[test]
 fn test_json_flag_global() {
     // --json should be accepted as global flag
-    domguard()
-        .args(["--json", "--help"])
-        .assert()
-        .success();
+    domguard().args(["--json", "--help"]).assert().success();
 }
 
 #[test]
@@ -139,19 +136,13 @@ fn test_timeout_flag() {
 #[test]
 fn test_interact_click_requires_target() {
     // click without selector, coords, or text should fail
-    domguard()
-        .args(["interact", "click"])
-        .assert()
-        .failure();
+    domguard().args(["interact", "click"]).assert().failure();
 }
 
 #[test]
 fn test_interact_type_requires_text() {
     // type without text should fail
-    domguard()
-        .args(["interact", "type"])
-        .assert()
-        .failure();
+    domguard().args(["interact", "type"]).assert().failure();
 }
 
 #[test]

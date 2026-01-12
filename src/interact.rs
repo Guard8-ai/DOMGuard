@@ -502,10 +502,7 @@ async fn interact_screenshot(
         Config::find_domguard_dir()
             .unwrap_or_else(|| std::env::current_dir().unwrap_or_default())
             .join("screenshots")
-            .join(format!(
-                "screenshot_{}.png",
-                safe_timestamp()
-            ))
+            .join(format!("screenshot_{}.png", safe_timestamp()))
     });
 
     // Ensure directory exists
@@ -778,10 +775,7 @@ async fn interact_pdf(
         Config::find_domguard_dir()
             .unwrap_or_else(|| std::env::current_dir().unwrap_or_default())
             .join("screenshots")
-            .join(format!(
-                "page_{}.pdf",
-                safe_timestamp()
-            ))
+            .join(format!("page_{}.pdf", safe_timestamp()))
     });
 
     // Ensure directory exists
@@ -922,10 +916,7 @@ async fn interact_screenshot_region(
         Config::find_domguard_dir()
             .unwrap_or_else(|| std::env::current_dir().unwrap_or_default())
             .join("screenshots")
-            .join(format!(
-                "region_{}.png",
-                safe_timestamp()
-            ))
+            .join(format!("region_{}.png", safe_timestamp()))
     });
 
     // Ensure directory exists
