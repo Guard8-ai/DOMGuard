@@ -1164,6 +1164,25 @@ async fn run_command(cli: Cli, formatter: &Formatter) -> Result<()> {
                 return Ok(());
             }
 
+            // Early validation for commands that require arguments
+            // This prevents unnecessary CDP connection attempts when args are missing
+            match command {
+                InteractSubcommand::Click {
+                    selector,
+                    coords,
+                    text,
+                    ..
+                } if selector.is_none() && coords.is_none() && text.is_none() => {
+                    anyhow::bail!("Click requires at least one of: SELECTOR, --coords, or --text");
+                }
+                InteractSubcommand::Type { text, focused, .. }
+                    if text.as_ref().map_or(true, |t| t.is_empty()) && !focused =>
+                {
+                    anyhow::bail!("Type requires TEXT argument or --focused flag");
+                }
+                _ => {}
+            }
+
             cdp.connect().await?;
 
             // Build action info for session recording
