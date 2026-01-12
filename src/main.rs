@@ -1176,7 +1176,7 @@ async fn run_command(cli: Cli, formatter: &Formatter) -> Result<()> {
                     anyhow::bail!("Click requires at least one of: SELECTOR, --coords, or --text");
                 }
                 InteractSubcommand::Type { text, focused, .. }
-                    if text.as_ref().map_or(true, |t| t.is_empty()) && !focused =>
+                    if text.as_ref().is_none_or(|t| t.is_empty()) && !focused =>
                 {
                     anyhow::bail!("Type requires TEXT argument or --focused flag");
                 }
