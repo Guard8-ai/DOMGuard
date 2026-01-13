@@ -646,12 +646,8 @@ async fn interact_drag(
 
     cdp.drag(from_x, from_y, to_x, to_y).await?;
 
-    let from_str = from_selector
-        .map(|s| s.to_string())
-        .unwrap_or_else(|| format!("({}, {})", from_x, from_y));
-    let to_str = to_selector
-        .map(|s| s.to_string())
-        .unwrap_or_else(|| format!("({}, {})", to_x, to_y));
+    let from_str = from_selector.map_or_else(|| format!("({}, {})", from_x, from_y), |s| s.to_string());
+    let to_str = to_selector.map_or_else(|| format!("({}, {})", to_x, to_y), |s| s.to_string());
 
     formatter.success(&format!("Dragged from {} to {}", from_str, to_str));
     Ok(InteractResult {

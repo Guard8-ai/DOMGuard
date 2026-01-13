@@ -6,6 +6,7 @@
 use anyhow::Result;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
+use std::fmt::Write as _;
 use std::path::PathBuf;
 
 /// Site-specific instructions and behaviors
@@ -214,7 +215,7 @@ impl SiteInstructionsManager {
             let entry = entry?;
             let path = entry.path();
 
-            if path.extension().map(|e| e == "toml").unwrap_or(false) {
+            if path.extension().is_some_and(|e| e == "toml") {
                 if let Ok(content) = std::fs::read_to_string(&path) {
                     if let Ok(instructions) = toml::from_str::<SiteInstructions>(&content) {
                         self.cache.insert(instructions.domain.clone(), instructions);
@@ -357,44 +358,44 @@ fn matches_domain_pattern(pattern: &str, domain: &str) -> bool {
 pub fn format_instructions(instructions: &SiteInstructions) -> String {
     let mut output = String::new();
 
-    output.push_str(&format!("Site: {}\n", instructions.domain));
+    let _ = writeln!(output, "Site: {}", instructions.domain);
 
     if let Some(desc) = &instructions.description {
-        output.push_str(&format!("  Description: {}\n", desc));
+        let _ = writeln!(output, "  Description: {}", desc);
     }
 
     if let Some(login) = &instructions.login {
         output.push_str("\n  Login Configuration:\n");
         if let Some(url) = &login.url {
-            output.push_str(&format!("    URL: {}\n", url));
+            let _ = writeln!(output, "    URL: {}", url);
         }
         if let Some(sel) = &login.username_selector {
-            output.push_str(&format!("    Username: {}\n", sel));
+            let _ = writeln!(output, "    Username: {}", sel);
         }
         if let Some(sel) = &login.password_selector {
-            output.push_str(&format!("    Password: {}\n", sel));
+            let _ = writeln!(output, "    Password: {}", sel);
         }
     }
 
     if !instructions.selectors.is_empty() {
         output.push_str("\n  Custom Selectors:\n");
         for (name, selector) in &instructions.selectors {
-            output.push_str(&format!("    {}: {}\n", name, selector));
+            let _ = writeln!(output, "    {}: {}", name, selector);
         }
     }
 
     if let Some(cookie) = &instructions.cookie_consent {
         output.push_str("\n  Cookie Consent:\n");
-        output.push_str(&format!("    Action: {}\n", cookie.action));
+        let _ = writeln!(output, "    Action: {}", cookie.action);
         if let Some(sel) = &cookie.accept_selector {
-            output.push_str(&format!("    Accept: {}\n", sel));
+            let _ = writeln!(output, "    Accept: {}", sel);
         }
     }
 
     if !instructions.notes.is_empty() {
         output.push_str("\n  Notes:\n");
         for note in &instructions.notes {
-            output.push_str(&format!("    - {}\n", note));
+            let _ = writeln!(output, "    - {}", note);
         }
     }
 

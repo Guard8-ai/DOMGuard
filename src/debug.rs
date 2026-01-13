@@ -4,6 +4,7 @@
 
 use anyhow::Result;
 use serde::Serialize;
+use std::fmt::Write as _;
 
 use crate::cdp::CdpConnection;
 use crate::output::{mask_sensitive, AriaNode, ConsoleMessage, DomNode, Formatter, NetworkRequest};
@@ -984,10 +985,10 @@ async fn debug_highlight(
 
                     let mut desc = format!("  [{}] <{}", idx, tag);
                     if !id.is_empty() {
-                        desc.push_str(&format!(" id=\"{}\"", id));
+                        let _ = write!(desc, " id=\"{}\"", id);
                     }
                     if !classes.is_empty() {
-                        desc.push_str(&format!(" class=\"{}\"", classes));
+                        let _ = write!(desc, " class=\"{}\"", classes);
                     }
                     desc.push('>');
                     println!("{}", desc);

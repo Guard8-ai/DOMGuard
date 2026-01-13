@@ -5,6 +5,7 @@
 
 use anyhow::Result;
 use serde::{Deserialize, Serialize};
+use std::fmt::Write as _;
 use std::path::PathBuf;
 
 /// Takeover state
@@ -149,7 +150,7 @@ pub struct TakeoverManager {
 
 impl TakeoverManager {
     /// Create a new manager
-    pub fn new(domguard_dir: PathBuf) -> Self {
+    pub fn new(domguard_dir: &std::path::Path) -> Self {
         Self {
             state_file: domguard_dir.join("_takeover_state.json"),
         }
@@ -178,9 +179,9 @@ impl TakeoverManager {
     }
 
     /// Start a new takeover session
-    pub fn start(&self, session: TakeoverSession) -> Result<String> {
+    pub fn start(&self, session: &TakeoverSession) -> Result<String> {
         let id = session.id.clone();
-        let content = serde_json::to_string_pretty(&session)?;
+        let content = serde_json::to_string_pretty(session)?;
         std::fs::write(&self.state_file, content)?;
         Ok(id)
     }
@@ -251,7 +252,7 @@ impl TakeoverManager {
         for entry in std::fs::read_dir(history_dir)? {
             let entry = entry?;
             let path = entry.path();
-            if path.extension().map(|e| e == "json").unwrap_or(false) {
+            if path.extension().is_some_and(|e| e == "json") {
                 if let Ok(content) = std::fs::read_to_string(&path) {
                     if let Ok(session) = serde_json::from_str::<TakeoverSession>(&content) {
                         sessions.push(session);
@@ -288,33 +289,35 @@ pub fn format_takeover(session: &TakeoverSession) -> String {
         TakeoverState::ResumeRequested => "Resume Requested",
     };
 
-    output.push_str(&format!("Takeover Session: {}\n", session.id));
-    output.push_str(&format!("  State: {}\n", state_str));
-    output.push_str(&format!("  Reason: {:?}\n", session.reason));
-    output.push_str(&format!("  Message: {}\n", session.message));
+    let _ = writeln!(output, "Takeover Session: {}", session.id);
+    let _ = writeln!(output, "  State: {}", state_str);
+    let _ = writeln!(output, "  Reason: {:?}", session.reason);
+    let _ = writeln!(output, "  Message: {}", session.message);
 
     if let Some(instructions) = &session.instructions {
-        output.push_str(&format!("  Instructions: {}\n", instructions));
+        let _ = writeln!(output, "  Instructions: {}", instructions);
     }
 
     if let Some(url) = &session.url {
-        output.push_str(&format!("  URL: {}\n", url));
+        let _ = writeln!(output, "  URL: {}", url);
     }
 
-    output.push_str(&format!(
-        "  Started: {}\n",
+    let _ = writeln!(
+        output,
+        "  Started: {}",
         session.started_at.format("%Y-%m-%d %H:%M:%S")
-    ));
+    );
 
     if let Some(duration) = session.duration_secs {
-        output.push_str(&format!("  Duration: {}s\n", duration));
+        let _ = writeln!(output, "  Duration: {}s", duration);
     }
 
     if let Some(success) = session.success {
-        output.push_str(&format!(
-            "  Success: {}\n",
+        let _ = writeln!(
+            output,
+            "  Success: {}",
             if success { "Yes" } else { "No" }
-        ));
+        );
     }
 
     output

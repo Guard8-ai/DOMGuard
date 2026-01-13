@@ -6,6 +6,7 @@
 use anyhow::Result;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
+use std::fmt::Write as _;
 use std::path::PathBuf;
 
 /// A reusable workflow (macro) definition
@@ -229,7 +230,7 @@ impl WorkflowManager {
             let entry = entry?;
             let path = entry.path();
 
-            if path.extension().map(|e| e == "toml").unwrap_or(false) {
+            if path.extension().is_some_and(|e| e == "toml") {
                 if let Ok(content) = std::fs::read_to_string(&path) {
                     if let Ok(workflow) = toml::from_str::<Workflow>(&content) {
                         self.cache.insert(workflow.id.clone(), workflow);
@@ -278,8 +279,7 @@ impl WorkflowManager {
             .filter(|w| {
                 w.domain
                     .as_ref()
-                    .map(|d| d.to_lowercase().contains(&domain_lower))
-                    .unwrap_or(false)
+                    .is_some_and(|d| d.to_lowercase().contains(&domain_lower))
             })
             .collect()
     }
@@ -430,34 +430,35 @@ fn uuid_simple() -> String {
 pub fn format_workflow(workflow: &Workflow) -> String {
     let mut output = String::new();
 
-    output.push_str(&format!("Workflow: {} ({})\n", workflow.name, workflow.id));
+    let _ = writeln!(output, "Workflow: {} ({})", workflow.name, workflow.id);
 
     if let Some(desc) = &workflow.description {
-        output.push_str(&format!("  Description: {}\n", desc));
+        let _ = writeln!(output, "  Description: {}", desc);
     }
 
     if let Some(domain) = &workflow.domain {
-        output.push_str(&format!("  Domain: {}\n", domain));
+        let _ = writeln!(output, "  Domain: {}", domain);
     }
 
     if !workflow.tags.is_empty() {
-        output.push_str(&format!("  Tags: {}\n", workflow.tags.join(", ")));
+        let _ = writeln!(output, "  Tags: {}", workflow.tags.join(", "));
     }
 
-    output.push_str(&format!("  Steps: {}\n", workflow.steps.len()));
-    output.push_str(&format!("  Run count: {}\n", workflow.run_count));
+    let _ = writeln!(output, "  Steps: {}", workflow.steps.len());
+    let _ = writeln!(output, "  Run count: {}", workflow.run_count);
 
     if !workflow.parameters.is_empty() {
         output.push_str("\n  Parameters:\n");
         for param in &workflow.parameters {
             let req = if param.required { "*" } else { "" };
-            output.push_str(&format!(
-                "    - {}{}: {} ({})\n",
+            let _ = writeln!(
+                output,
+                "    - {}{}: {} ({})",
                 param.name,
                 req,
                 param.description.as_deref().unwrap_or(""),
                 param.param_type
-            ));
+            );
         }
     }
 
@@ -465,7 +466,7 @@ pub fn format_workflow(workflow: &Workflow) -> String {
     for (i, step) in workflow.steps.iter().enumerate() {
         let name = step.name.as_deref().unwrap_or(&step.action);
         let target = step.target.as_deref().unwrap_or("");
-        output.push_str(&format!("    {}. {} {}\n", i + 1, name, target));
+        let _ = writeln!(output, "    {}. {} {}", i + 1, name, target);
     }
 
     output
@@ -477,13 +478,14 @@ pub fn format_workflow_list(workflows: &[&Workflow]) -> String {
 
     for workflow in workflows {
         let domain = workflow.domain.as_deref().unwrap_or("-");
-        output.push_str(&format!(
-            "  {} - {} ({} steps, {})\n",
+        let _ = writeln!(
+            output,
+            "  {} - {} ({} steps, {})",
             workflow.id,
             workflow.name,
             workflow.steps.len(),
             domain
-        ));
+        );
     }
 
     output

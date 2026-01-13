@@ -4,6 +4,7 @@
 //! Used for debugging, teaching, and AI agent transparency.
 
 use serde::{Deserialize, Serialize};
+use std::fmt::Write as _;
 
 /// Context for generating explanations
 #[derive(Debug, Clone, Default, Serialize, Deserialize)]
@@ -123,7 +124,7 @@ fn explain_click(target: Option<&str>, context: &ExplanationContext) -> ActionEx
             )
         } else if sel_lower.contains("close")
             || sel_lower.contains("dismiss")
-            || sel_lower.contains("x")
+            || sel_lower.contains('x')
         {
             (
                 "Closing a dialog, popup, or notification".to_string(),
@@ -152,7 +153,7 @@ fn explain_click(target: Option<&str>, context: &ExplanationContext) -> ActionEx
                 "Expanding or collapsing a section".to_string(),
                 "Section visibility will toggle".to_string(),
             )
-        } else if sel.starts_with("(") && sel.contains(",") {
+        } else if sel.starts_with('(') && sel.contains(',') {
             // Coordinates
             (
                 "Clicking at specific screen coordinates".to_string(),
@@ -533,7 +534,7 @@ fn explain_scroll(target: Option<&str>, _context: &ExplanationContext) -> Action
     let target_str = target.unwrap_or("page");
 
     let reason = if let Some(sel) = target {
-        if sel.contains(",") {
+        if sel.contains(',') {
             // Coordinates
             format!("Scrolling by {} pixels", sel)
         } else {
@@ -573,12 +574,12 @@ fn explain_cursor_position(_context: &ExplanationContext) -> ActionExplanation {
 pub fn format_explanation(explanation: &ActionExplanation) -> String {
     let mut output = String::new();
 
-    output.push_str(&format!("Action: {}\n", explanation.action));
-    output.push_str(&format!("Reason: {}\n", explanation.reason));
-    output.push_str(&format!("Expected: {}\n", explanation.expected_outcome));
+    let _ = writeln!(output, "Action: {}", explanation.action);
+    let _ = writeln!(output, "Reason: {}", explanation.reason);
+    let _ = writeln!(output, "Expected: {}", explanation.expected_outcome);
 
     if let Some(goal) = &explanation.goal_context {
-        output.push_str(&format!("Goal: {}\n", goal));
+        let _ = writeln!(output, "Goal: {}", goal);
     }
 
     output
@@ -597,8 +598,10 @@ mod tests {
 
     #[test]
     fn test_navigate_explanation() {
-        let mut context = ExplanationContext::default();
-        context.current_url = Some("https://example.com".to_string());
+        let context = ExplanationContext {
+            current_url: Some("https://example.com".to_string()),
+            ..Default::default()
+        };
         let explanation = explain_action("navigate", Some("https://newsite.com"), &context);
         assert!(explanation.reason.contains("example.com"));
     }

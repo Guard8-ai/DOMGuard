@@ -5,6 +5,7 @@
 use colored::*;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
+use std::fmt::Write as _;
 
 /// Output format mode
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -197,11 +198,11 @@ impl DomNode {
         // Build tag with id and classes
         let mut tag_str = format!("<{}", self.tag);
         if let Some(id) = &self.id {
-            tag_str.push_str(&format!(" id=\"{}\"", id));
+            let _ = write!(tag_str, " id=\"{}\"", id);
         }
         if let Some(classes) = &self.classes {
             if !classes.is_empty() {
-                tag_str.push_str(&format!(" class=\"{}\"", classes.join(" ")));
+                let _ = write!(tag_str, " class=\"{}\"", classes.join(" "));
             }
         }
         tag_str.push('>');
@@ -270,9 +271,9 @@ pub struct NetworkRequest {
 
 impl std::fmt::Display for NetworkRequest {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        let status_str = self
-            .status
-            .map(|s| {
+        let status_str = self.status.map_or_else(
+            || "...".dimmed().to_string(),
+            |s| {
                 if (200..300).contains(&s) {
                     s.to_string().green().to_string()
                 } else if s >= 400 {
@@ -280,8 +281,8 @@ impl std::fmt::Display for NetworkRequest {
                 } else {
                     s.to_string().yellow().to_string()
                 }
-            })
-            .unwrap_or_else(|| "...".dimmed().to_string());
+            },
+        );
 
         write!(f, "{} {} [{}]", self.method.cyan(), self.url, status_str)?;
 

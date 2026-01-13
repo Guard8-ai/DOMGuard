@@ -333,15 +333,13 @@ impl SessionRecorder {
     /// Check if currently recording
     pub fn is_recording(&self) -> bool {
         self.get_active_session()
-            .map(|s| s.status == SessionStatus::Recording)
-            .unwrap_or(false)
+            .is_some_and(|s| s.status == SessionStatus::Recording)
     }
 
     /// Check if paused
     pub fn is_paused(&self) -> bool {
         self.get_active_session()
-            .map(|s| s.status == SessionStatus::Paused)
-            .unwrap_or(false)
+            .is_some_and(|s| s.status == SessionStatus::Paused)
     }
 
     /// Record an action
@@ -387,12 +385,11 @@ impl SessionRecorder {
             // Skip the active session file
             if path
                 .file_name()
-                .map(|n| n == "_active_session.json")
-                .unwrap_or(false)
+                .is_some_and(|n| n == "_active_session.json")
             {
                 continue;
             }
-            if path.extension().map(|e| e == "json").unwrap_or(false) {
+            if path.extension().is_some_and(|e| e == "json") {
                 if let Ok(session) = Session::load(&path) {
                     sessions.push(session.summary());
                 }
@@ -491,7 +488,7 @@ fn uuid_v4() -> String {
         .duration_since(UNIX_EPOCH)
         .unwrap_or_default();
     let timestamp = duration.as_nanos();
-    let random: u64 = (timestamp as u64) ^ (std::process::id() as u64 * 0x5DEECE66D);
+    let random: u64 = (timestamp as u64) ^ (u64::from(std::process::id()) * 0x5DEECE66D);
     format!(
         "{:016x}-{:04x}-4{:03x}-{:04x}-{:012x}",
         timestamp & 0xFFFFFFFFFFFFFFFF,

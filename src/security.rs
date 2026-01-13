@@ -4,6 +4,7 @@
 
 use anyhow::Result;
 use serde::{Deserialize, Serialize};
+use std::fmt::Write as _;
 use std::path::PathBuf;
 
 /// Sensitive action types that require extra attention
@@ -153,7 +154,7 @@ impl SecurityChecker {
     }
 
     /// Check if typing into a selector is sensitive
-    pub fn check_type_action(&self, selector: &str, _text: &str) -> SensitiveActionDetection {
+    pub fn check_type_action(selector: &str, _text: &str) -> SensitiveActionDetection {
         let selector_lower = selector.to_lowercase();
 
         // Check for password fields
@@ -216,7 +217,7 @@ impl SecurityChecker {
     }
 
     /// Check if clicking a selector is sensitive
-    pub fn check_click_action(&self, selector: &str) -> SensitiveActionDetection {
+    pub fn check_click_action(selector: &str) -> SensitiveActionDetection {
         let selector_lower = selector.to_lowercase();
 
         // Check for submit buttons on potentially sensitive forms
@@ -355,7 +356,7 @@ impl SecurityChecker {
     }
 
     /// Check if file upload is sensitive
-    pub fn check_upload(&self, files: &[PathBuf]) -> SensitiveActionDetection {
+    pub fn check_upload(files: &[PathBuf]) -> SensitiveActionDetection {
         // Check file extensions for sensitive documents
         let sensitive_extensions = [
             "pdf", "doc", "docx", "xls", "xlsx", "csv", "txt", "key", "pem", "crt", "p12", "pfx",
@@ -433,8 +434,10 @@ pub fn format_security_warning(detection: &SensitiveActionDetection) -> String {
         Severity::Critical => "🚨",
     };
 
-    let mut warning = format!(
-        "{} SECURITY WARNING: {}\n",
+    let mut warning = String::new();
+    let _ = writeln!(
+        warning,
+        "{} SECURITY WARNING: {}",
         severity_icon,
         detection
             .reason
@@ -443,12 +446,12 @@ pub fn format_security_warning(detection: &SensitiveActionDetection) -> String {
     );
 
     if let Some(action_type) = &detection.action_type {
-        warning.push_str(&format!("   Type: {:?}\n", action_type));
+        let _ = writeln!(warning, "   Type: {:?}", action_type);
     }
-    warning.push_str(&format!("   Severity: {:?}\n", detection.severity));
+    let _ = writeln!(warning, "   Severity: {:?}", detection.severity);
 
     if let Some(elem) = &detection.element_info {
-        warning.push_str(&format!("   Element: <{}>\n", elem.tag));
+        let _ = writeln!(warning, "   Element: <{}>", elem.tag);
     }
 
     warning
@@ -460,8 +463,7 @@ mod tests {
 
     #[test]
     fn test_password_detection() {
-        let checker = SecurityChecker::new(BlockedSitesConfig::default());
-        let result = checker.check_type_action("[type=password]", "secret");
+        let result = SecurityChecker::check_type_action("[type=password]", "secret");
         assert!(result.detected);
         assert_eq!(result.action_type, Some(SensitiveActionType::PasswordInput));
         assert_eq!(result.severity, Severity::High);
@@ -469,8 +471,7 @@ mod tests {
 
     #[test]
     fn test_credit_card_detection() {
-        let checker = SecurityChecker::new(BlockedSitesConfig::default());
-        let result = checker.check_type_action("#credit-card-number", "1234");
+        let result = SecurityChecker::check_type_action("#credit-card-number", "1234");
         assert!(result.detected);
         assert_eq!(
             result.action_type,
@@ -499,16 +500,14 @@ mod tests {
 
     #[test]
     fn test_upload_detection() {
-        let checker = SecurityChecker::new(BlockedSitesConfig::default());
-        let result = checker.check_upload(&[PathBuf::from("/home/user/passport.pdf")]);
+        let result = SecurityChecker::check_upload(&[PathBuf::from("/home/user/passport.pdf")]);
         assert!(result.detected);
         assert_eq!(result.action_type, Some(SensitiveActionType::FileUpload));
     }
 
     #[test]
     fn test_normal_action() {
-        let checker = SecurityChecker::new(BlockedSitesConfig::default());
-        let result = checker.check_type_action("#search-input", "hello");
+        let result = SecurityChecker::check_type_action("#search-input", "hello");
         assert!(!result.detected);
     }
 }

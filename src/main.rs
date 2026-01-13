@@ -18,6 +18,7 @@ mod takeover;
 mod workflow;
 
 use anyhow::Result;
+use std::fmt::Write as _;
 use clap::{Parser, Subcommand};
 use colored::*;
 use std::path::PathBuf;
@@ -1520,9 +1521,7 @@ fn handle_init(formatter: &Formatter) -> Result<()> {
         if let Some(guide_path) = result.guide_path {
             formatter.header("AI Agent Integration");
             let filename = guide_path
-                .file_name()
-                .map(|n| n.to_string_lossy().to_string())
-                .unwrap_or_else(|| "guide".to_string());
+                .file_name().map_or_else(|| "guide".to_string(), |n| n.to_string_lossy().to_string());
             formatter.item(&format!("{} copied", filename));
         }
 
@@ -1933,20 +1932,21 @@ fn export_session_as_bash(session: &crate::session::Session) -> String {
     output.push_str("#!/bin/bash\n");
     output.push_str("# DOMGuard Session Export\n");
     if let Some(name) = &session.name {
-        output.push_str(&format!("# Session: {}\n", name));
+        let _ = writeln!(output, "# Session: {}", name);
     }
-    output.push_str(&format!("# ID: {}\n", session.id));
-    output.push_str(&format!(
-        "# Recorded: {}\n",
+    let _ = writeln!(output, "# ID: {}", session.id);
+    let _ = writeln!(
+        output,
+        "# Recorded: {}",
         session.started_at.format("%Y-%m-%d %H:%M:%S")
-    ));
+    );
     output.push('\n');
     output.push_str("set -e  # Exit on error\n\n");
 
     for action in &session.actions {
         // Convert action back to CLI command
         let cmd = format_action_as_command(action);
-        output.push_str(&format!("{}\n", cmd));
+        let _ = writeln!(output, "{}", cmd);
     }
 
     output
@@ -1956,14 +1956,15 @@ fn export_session_as_markdown(session: &crate::session::Session) -> String {
     let mut output = String::new();
     output.push_str("# DOMGuard Session\n\n");
     if let Some(name) = &session.name {
-        output.push_str(&format!("**Name:** {}\n\n", name));
+        let _ = writeln!(output, "**Name:** {}\n", name);
     }
-    output.push_str(&format!("**ID:** `{}`\n\n", session.id));
-    output.push_str(&format!(
-        "**Recorded:** {}\n\n",
+    let _ = writeln!(output, "**ID:** `{}`\n", session.id);
+    let _ = writeln!(
+        output,
+        "**Recorded:** {}\n",
         session.started_at.format("%Y-%m-%d %H:%M:%S")
-    ));
-    output.push_str(&format!("**Total Actions:** {}\n\n", session.actions.len()));
+    );
+    let _ = writeln!(output, "**Total Actions:** {}\n", session.actions.len());
     output.push_str("## Actions\n\n");
 
     for (i, action) in session.actions.iter().enumerate() {
@@ -1973,25 +1974,26 @@ fn export_session_as_markdown(session: &crate::session::Session) -> String {
             crate::session::ActionStatus::Skipped => "⏭️",
             crate::session::ActionStatus::Paused => "⏸️",
         };
-        output.push_str(&format!(
-            "{}. {} **{}** ({}ms)\n",
+        let _ = writeln!(
+            output,
+            "{}. {} **{}** ({}ms)",
             i + 1,
             status,
             action.command,
             action.duration_ms
-        ));
+        );
         if let Some(selector) = &action.selector {
-            output.push_str(&format!("   - Selector: `{}`\n", selector));
+            let _ = writeln!(output, "   - Selector: `{}`", selector);
         }
         if let Some(error) = &action.error {
-            output.push_str(&format!("   - Error: {}\n", error));
+            let _ = writeln!(output, "   - Error: {}", error);
         }
         output.push('\n');
     }
 
     output.push_str("## Replay Commands\n\n```bash\n");
     for action in &session.actions {
-        output.push_str(&format!("{}\n", format_action_as_command(action)));
+        let _ = writeln!(output, "{}", format_action_as_command(action));
     }
     output.push_str("```\n");
 
@@ -2025,10 +2027,10 @@ fn handle_security(command: &SecuritySubcommand, formatter: &Formatter) -> Resul
             let checker = SecurityChecker::new(config);
 
             let detection = match action.as_str() {
-                "type" => checker.check_type_action(target, value.as_deref().unwrap_or("")),
-                "click" => checker.check_click_action(target),
+                "type" => SecurityChecker::check_type_action(target, value.as_deref().unwrap_or("")),
+                "click" => SecurityChecker::check_click_action(target),
                 "navigate" => checker.check_navigation(target),
-                "upload" => checker.check_upload(&[PathBuf::from(target)]),
+                "upload" => SecurityChecker::check_upload(&[PathBuf::from(target)]),
                 _ => {
                     anyhow::bail!(
                         "Unknown action type: {}. Use: type, click, navigate, or upload",
@@ -2764,7 +2766,7 @@ async fn handle_takeover(
     use crate::takeover::{format_takeover, TakeoverManager, TakeoverReason, TakeoverSession};
 
     let domguard_dir = Config::find_domguard_dir().unwrap_or_else(Config::domguard_dir);
-    let manager = TakeoverManager::new(domguard_dir);
+    let manager = TakeoverManager::new(&domguard_dir);
 
     match command {
         TakeoverSubcommand::Request {
@@ -2846,7 +2848,7 @@ async fn handle_takeover(
                 }
             }
 
-            let id = manager.start(session.clone())?;
+            let id = manager.start(&session)?;
 
             if formatter.is_json() {
                 formatter.output_json(&serde_json::json!({

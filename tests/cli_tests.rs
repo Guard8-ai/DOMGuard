@@ -6,7 +6,7 @@ use assert_cmd::Command;
 use predicates::prelude::*;
 
 fn domguard() -> Command {
-    Command::cargo_bin("domguard").unwrap()
+    Command::new(env!("CARGO_BIN_EXE_domguard"))
 }
 
 #[test]

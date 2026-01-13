@@ -446,7 +446,7 @@ impl CdpConnection {
             let index = obj
                 .get("index")
                 .and_then(|v| v.as_i64())
-                .unwrap_or(nth as i64);
+                .unwrap_or(i64::from(nth));
             return Err(anyhow!(
                 "Index {} out of bounds, found {} element(s) matching \"{}\"",
                 index,
@@ -539,7 +539,7 @@ impl CdpConnection {
             let index = obj
                 .get("index")
                 .and_then(|v| v.as_i64())
-                .unwrap_or(nth as i64);
+                .unwrap_or(i64::from(nth));
             return Err(anyhow!(
                 "Index {} out of bounds, found {} element(s) containing \"{}\"",
                 index,
@@ -1442,9 +1442,7 @@ impl CdpConnection {
     /// Handle JavaScript dialog (alert, confirm, prompt)
     pub async fn handle_dialog(&self, accept: bool, text: Option<&str>) -> Result<()> {
         // Override window methods to auto-handle dialogs
-        let text_value = text
-            .map(|t| format!("'{}'", t.replace('\'', "\\'")))
-            .unwrap_or_else(|| "''".to_string());
+        let text_value = text.map_or_else(|| "''".to_string(), |t| format!("'{}'", t.replace('\'', "\\'")));
         let js = format!(
             r#"
             (function() {{
@@ -1770,10 +1768,10 @@ impl CdpConnection {
         use chromiumoxide::cdp::browser_protocol::page::Viewport;
 
         let clip = Viewport {
-            x: x as f64,
-            y: y as f64,
-            width: width as f64,
-            height: height as f64,
+            x: f64::from(x),
+            y: f64::from(y),
+            width: f64::from(width),
+            height: f64::from(height),
             scale: 1.0,
         };
 
@@ -2042,7 +2040,7 @@ impl CdpConnection {
             r,
             g,
             b,
-            a as f64 / 255.0,
+            f64::from(a) / 255.0,
             r,
             g,
             b,
@@ -2159,7 +2157,7 @@ impl CdpConnection {
             r,
             g,
             b,
-            a as f64 / 255.0,
+            f64::from(a) / 255.0,
             r,
             g,
             b,

@@ -4,6 +4,7 @@
 //! Supports reCAPTCHA, hCaptcha, Cloudflare Turnstile, and other common patterns.
 
 use serde::{Deserialize, Serialize};
+use std::fmt::Write as _;
 
 /// Types of CAPTCHA detected
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
@@ -279,27 +280,28 @@ pub fn format_captcha_detection(detection: &CaptchaDetection) -> String {
     let mut output = String::new();
 
     if let Some(desc) = &detection.description {
-        output.push_str(&format!("⚠️  {}\n", desc));
+        let _ = writeln!(output, "⚠️  {}", desc);
     } else {
         output.push_str("⚠️  CAPTCHA detected\n");
     }
 
     if let Some(captcha_type) = &detection.captcha_type {
-        output.push_str(&format!("   Type: {:?}\n", captcha_type));
+        let _ = writeln!(output, "   Type: {:?}", captcha_type);
     }
 
     if let Some(selector) = &detection.selector {
-        output.push_str(&format!("   Element: {}\n", selector));
+        let _ = writeln!(output, "   Element: {}", selector);
     }
 
-    output.push_str(&format!(
-        "   Solved: {}\n",
+    let _ = writeln!(
+        output,
+        "   Solved: {}",
         if detection.appears_solved {
             "Yes"
         } else {
             "No"
         }
-    ));
+    );
 
     let action = match detection.recommendation {
         CaptchaRecommendation::Continue => "Continue with automation",
@@ -307,7 +309,7 @@ pub fn format_captcha_detection(detection: &CaptchaDetection) -> String {
         CaptchaRecommendation::WaitForAutoSolve => "Wait for automatic solution",
         CaptchaRecommendation::Retry => "Retry after short delay",
     };
-    output.push_str(&format!("   Action: {}\n", action));
+    let _ = writeln!(output, "   Action: {}", action);
 
     output
 }
