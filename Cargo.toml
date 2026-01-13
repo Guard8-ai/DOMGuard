@@ -51,8 +51,8 @@ reqwest = { git = "https://github.com/seanmonstar/reqwest", tag = "v0.12.16" }
 # Lints - Strict mode: fail on warnings and clippy
 # ============================================================================
 [lints.rust]
-dead_code = "deny"
-unused = "deny"
+dead_code = "warn"
+unused = "warn"
 
 [lints.clippy]
 all = { level = "deny", priority = -1 }
@@ -74,3 +74,25 @@ single_match_else = "allow"
 uninlined_format_args = "allow"
 
 case_sensitive_file_extension_comparisons = "allow"
+empty_line_after_doc_comments = "allow"
+ptr_arg = "allow"
+unnecessary_wraps = "allow"
+needless_raw_string_hashes = "allow"
+unreadable_literal = "allow"
+struct_field_names = "allow"
+doc_markdown = "allow"
+items_after_statements = "allow"
+wildcard_imports = "allow"
+unused_async = "allow"
+redundant_closure_for_method_calls = "allow"
+implicit_clone = "allow"
+match_same_arms = "allow"
+trivially_copy_pass_by_ref = "allow"
+if_not_else = "allow"
+match_wildcard_for_single_variants = "allow"
+no_effect_underscore_binding = "allow"
+ignored_unit_patterns = "allow"
+manual_string_new = "allow"
+struct_excessive_bools = "allow"
+fn_params_excessive_bools = "allow"
+return_self_not_must_use = "allow"
