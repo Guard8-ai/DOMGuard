@@ -5,7 +5,7 @@
 
 [package]
 name = "domguard"
-version = "1.0.1"
+version = "1.0.2"
 edition = "2021"
 description = "Local-first Chrome DevTools CLI for AI agents"
 license = "MIT"
