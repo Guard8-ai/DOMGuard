@@ -1442,7 +1442,10 @@ impl CdpConnection {
     /// Handle JavaScript dialog (alert, confirm, prompt)
     pub async fn handle_dialog(&self, accept: bool, text: Option<&str>) -> Result<()> {
         // Override window methods to auto-handle dialogs
-        let text_value = text.map_or_else(|| "''".to_string(), |t| format!("'{}'", t.replace('\'', "\\'")));
+        let text_value = text.map_or_else(
+            || "''".to_string(),
+            |t| format!("'{}'", t.replace('\'', "\\'")),
+        );
         let js = format!(
             r#"
             (function() {{

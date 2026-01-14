@@ -18,9 +18,9 @@ mod takeover;
 mod workflow;
 
 use anyhow::Result;
-use std::fmt::Write as _;
 use clap::{Parser, Subcommand};
 use colored::*;
+use std::fmt::Write as _;
 use std::path::PathBuf;
 
 use crate::cdp::CdpConnection;
@@ -1521,7 +1521,8 @@ fn handle_init(formatter: &Formatter) -> Result<()> {
         if let Some(guide_path) = result.guide_path {
             formatter.header("AI Agent Integration");
             let filename = guide_path
-                .file_name().map_or_else(|| "guide".to_string(), |n| n.to_string_lossy().to_string());
+                .file_name()
+                .map_or_else(|| "guide".to_string(), |n| n.to_string_lossy().to_string());
             formatter.item(&format!("{} copied", filename));
         }
 
@@ -2027,7 +2028,9 @@ fn handle_security(command: &SecuritySubcommand, formatter: &Formatter) -> Resul
             let checker = SecurityChecker::new(config);
 
             let detection = match action.as_str() {
-                "type" => SecurityChecker::check_type_action(target, value.as_deref().unwrap_or("")),
+                "type" => {
+                    SecurityChecker::check_type_action(target, value.as_deref().unwrap_or(""))
+                }
                 "click" => SecurityChecker::check_click_action(target),
                 "navigate" => checker.check_navigation(target),
                 "upload" => SecurityChecker::check_upload(&[PathBuf::from(target)]),

@@ -313,11 +313,7 @@ pub fn format_takeover(session: &TakeoverSession) -> String {
     }
 
     if let Some(success) = session.success {
-        let _ = writeln!(
-            output,
-            "  Success: {}",
-            if success { "Yes" } else { "No" }
-        );
+        let _ = writeln!(output, "  Success: {}", if success { "Yes" } else { "No" });
     }
 
     output
