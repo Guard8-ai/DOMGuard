@@ -96,3 +96,80 @@ jobs:
         prerelease: ${{ contains(github.ref, '-rc') || contains(github.ref, '-beta') || contains(github.ref, '-alpha') }}
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  publish-extension:
+    name: Publish Chrome Extension
+    needs: release
+    runs-on: ubuntu-latest
+    # Only publish if extension ID secret is configured
+    if: ${{ vars.CHROME_EXTENSION_ID != '' }}
+
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Update extension version from tag
+      run: |
+        VERSION="${GITHUB_REF_NAME#v}"
+        jq --arg v "$VERSION" '.version = $v' extension/manifest.json > tmp.json
+        mv tmp.json extension/manifest.json
+        cat extension/manifest.json | jq '{name, version}'
+
+    - name: Package extension
+      run: |
+        cd extension
+        zip -r ../domguard-extension.zip .
+        cd ..
+        ls -la domguard-extension.zip
+
+    - name: Authenticate to Google Cloud
+      uses: google-github-actions/auth@v2
+      with:
+        credentials_json: ${{ secrets.GOOGLE_SERVICE_ACCOUNT_KEY }}
+
+    - name: Upload to Chrome Web Store
+      run: |
+        ACCESS_TOKEN=$(gcloud auth print-access-token)
+
+        echo "Uploading extension..."
+        UPLOAD_RESPONSE=$(curl -s -w "\n%{http_code}" \
+          -H "Authorization: Bearer $ACCESS_TOKEN" \
+          -H "x-goog-api-version: 2" \
+          -X PUT \
+          -T domguard-extension.zip \
+          "https://www.googleapis.com/upload/chromewebstore/v1.1/items/${{ vars.CHROME_EXTENSION_ID }}")
+
+        HTTP_CODE=$(echo "$UPLOAD_RESPONSE" | tail -1)
+        BODY=$(echo "$UPLOAD_RESPONSE" | sed '$d')
+
+        echo "Upload response (HTTP $HTTP_CODE):"
+        echo "$BODY" | jq . || echo "$BODY"
+
+        if [ "$HTTP_CODE" -ge 400 ]; then
+          echo "Upload failed with HTTP $HTTP_CODE"
+          exit 1
+        fi
+
+    - name: Publish to Chrome Web Store
+      run: |
+        ACCESS_TOKEN=$(gcloud auth print-access-token)
+
+        echo "Publishing extension..."
+        PUBLISH_RESPONSE=$(curl -s -w "\n%{http_code}" \
+          -H "Authorization: Bearer $ACCESS_TOKEN" \
+          -H "x-goog-api-version: 2" \
+          -H "Content-Length: 0" \
+          -X POST \
+          "https://www.googleapis.com/chromewebstore/v1.1/items/${{ vars.CHROME_EXTENSION_ID }}/publish")
+
+        HTTP_CODE=$(echo "$PUBLISH_RESPONSE" | tail -1)
+        BODY=$(echo "$PUBLISH_RESPONSE" | sed '$d')
+
+        echo "Publish response (HTTP $HTTP_CODE):"
+        echo "$BODY" | jq . || echo "$BODY"
+
+        if [ "$HTTP_CODE" -ge 400 ]; then
+          echo "Publish failed with HTTP $HTTP_CODE"
+          exit 1
+        fi
+
+        echo "Extension published successfully!"
