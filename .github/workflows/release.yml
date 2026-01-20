@@ -134,8 +134,9 @@ jobs:
         UPLOAD_RESPONSE=$(curl -s -w "\n%{http_code}" \
           -H "Authorization: Bearer $ACCESS_TOKEN" \
           -H "x-goog-api-version: 2" \
+          -H "Content-Type: application/zip" \
           -X PUT \
-          -T domguard-extension.zip \
+          --data-binary @domguard-extension.zip \
           "https://www.googleapis.com/upload/chromewebstore/v1.1/items/${{ vars.CHROME_EXTENSION_ID }}")
 
         HTTP_CODE=$(echo "$UPLOAD_RESPONSE" | tail -1)
