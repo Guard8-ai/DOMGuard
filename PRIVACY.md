@@ -17,7 +17,6 @@ The extension operates entirely locally on your device. No information is sent t
 - Injects visual highlighting scripts into webpages you choose to inspect
 - Detects element information (tag names, CSS selectors, dimensions) when you hover
 - Copies CSS selectors to your clipboard when you click
-- Stores your preferences locally in your browser
 
 ## Permissions Explained
 
@@ -25,16 +24,8 @@ The extension operates entirely locally on your device. No information is sent t
 |------------|---------|
 | `activeTab` | Inject inspector into the current tab when you activate it |
 | `scripting` | Add visual highlighting overlay to webpages |
-| `storage` | Save your preferences locally |
 | `clipboardWrite` | Copy selectors to your clipboard |
 | `<all_urls>` | Allow inspection on any webpage you're developing |
-
-## Data Storage
-
-User preferences are stored locally using Chrome's storage API. This data:
-- Never leaves your device
-- Is not synced to any cloud service
-- Is not accessible to us or any third party
 
 ## Third Parties
 
